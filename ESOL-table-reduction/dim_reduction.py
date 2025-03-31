@@ -162,30 +162,70 @@ def create_vae(input_dim, latent_dim, intermediate_dim=256):
 
 def perform_vae(X, latent_dim, intermediate_dim=256, epochs=50, batch_size=32):
     """
-    执行VAE降维
+    Execute VAE dimensionality reduction with KL divergence tracking
 
-    参数:
-    X: 输入数据矩阵
-    latent_dim: 潜在空间维度
-    intermediate_dim: 中间层维度
-    epochs: 训练轮数
-    batch_size: 批次大小
+    Parameters:
+    X: Input data matrix
+    latent_dim: Latent space dimension
+    intermediate_dim: Intermediate layer dimension
+    epochs: Number of training epochs
+    batch_size: Batch size
 
-    返回:
-    X_vae: 降维后的数据
-    encoder: 编码器模型
-    metrics: 模型特有的指标（VAE没有额外计算的指标）
+    Returns:
+    X_vae: Reduced dimensionality data
+    encoder: Encoder model
+    metrics: Model-specific metrics including KL divergence
     """
-    # 创建VAE模型
+    # Create VAE model
     vae, encoder, decoder = create_vae(X.shape[1], latent_dim, intermediate_dim)
 
-    # 训练VAE
-    vae.fit(X, X, epochs=epochs, batch_size=batch_size, verbose=0)
+    # Train VAE
+    history = vae.fit(X, X, epochs=epochs, batch_size=batch_size, verbose=0)
 
-    # 获取嵌入
-    _, _, X_vae = encoder.predict(X)
+    # Get embeddings and latent space parameters
+    z_mean, z_log_var, X_vae = encoder.predict(X)
+
+    # Calculate KL divergence
+    from tensorflow.keras import backend as K
+    kl_divergence = -0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var))
+
+    # Convert tensor to Python float if needed
+    if hasattr(kl_divergence, 'numpy'):
+        kl_divergence = float(kl_divergence.numpy())
+
+    # Calculate reconstruction error
+    X_reconstructed = decoder.predict(X_vae)
+    reconstruction_error = np.mean(np.square(X - X_reconstructed))
+
+    metrics = {
+        'kl_divergence': kl_divergence,
+        'reconstruction_error': reconstruction_error,
+        'final_loss': history.history['loss'][-1] if history.history['loss'] else None
+    }
 
     print(f"VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}):")
-    print(f"  训练完成 ({epochs} 轮)")
+    print(f"  Training completed ({epochs} epochs)")
+    print(f"  KL divergence: {kl_divergence:.4f}")
+    print(f"  Reconstruction error: {reconstruction_error:.4f}")
 
-    return X_vae, encoder, {}
+    return X_vae, encoder, metrics
+
+
+def calculate_kl_divergence(z_mean, z_log_var):
+    """
+    Calculate the KL divergence for a VAE model
+
+    Parameters:
+    z_mean: Mean values of the latent space
+    z_log_var: Log variance values of the latent space
+
+    Returns:
+    kl_loss: KL divergence loss (scalar value)
+    """
+    import tensorflow as tf
+    import tensorflow.keras.backend as K
+
+    # KL divergence between the learned distribution and a standard normal distribution
+    kl_loss = -0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var))
+
+    return float(kl_loss.numpy())  # Convert tensor to Python float

@@ -294,7 +294,7 @@ def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
 
 def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
     """
-    Run VAE dimensionality reduction, clustering, and evaluation
+    Run VAE dimensionality reduction, clustering, and evaluation with expanded parameters
 
     Parameters:
     X_scaled: Standardized feature data
@@ -309,18 +309,23 @@ def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
     results = []
     clustering_results = []
 
-    print("\nRunning VAE dimensionality reduction...")
-    for latent_dim in [2, 5, 10]:
-        for intermediate_dim in [128, 256]:
-            print(f"  latent_dim = {latent_dim}, intermediate_dim = {intermediate_dim}")
+    print("\nRunning VAE dimensionality reduction with expanded parameters...")
+
+    # Expanded parameter grid for better VAE performance
+    # Added more latent dimensions and intermediate layer sizes
+    for latent_dim in [2, 5, 10, 20, 32]:
+        for intermediate_dim in [128, 256, 512]:
+            # For higher latent dimensions, try more training epochs
+            epochs = 100 if latent_dim >= 10 else 50
+            print(f"  latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}")
             start_time = time.time()
 
             # Perform VAE
-            X_vae, encoder, vae_metrics = perform_vae(X_scaled, latent_dim, intermediate_dim)
+            X_vae, encoder, vae_metrics = perform_vae(X_scaled, latent_dim, intermediate_dim, epochs=epochs)
             runtime = time.time() - start_time
 
             # Save reduction results
-            save_embedding_csv(X_vae, output_path, f"vae_ld{latent_dim}_id{intermediate_dim}.csv")
+            save_embedding_csv(X_vae, output_path, f"vae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}.csv")
 
             # Evaluate reduction quality
             eval_metrics = evaluate_embedding(X_scaled, X_vae, solubility_values, solubility_bins)
@@ -331,7 +336,7 @@ def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
             # Record results
             results.append({
                 'method': 'VAE',
-                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}',
+                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}',
                 'runtime': runtime,
                 'metrics': all_metrics
             })
@@ -340,29 +345,31 @@ def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
             if latent_dim == 2:
                 # Continuous value coloring
                 plot_2d_embedding(
-                    X_vae, solubility_values, output_path, f'vae_ld{latent_dim}_id{intermediate_dim}_2d_plot.png',
-                    f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim})', 'viridis',
-                    'Solubility Value'
+                    X_vae, solubility_values, output_path,
+                    f'vae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_2d_plot.png',
+                    f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs})',
+                    'viridis', 'Solubility Value'
                 )
 
                 # Discrete category coloring
                 if solubility_bins is not None:
                     plot_2d_embedding(
                         X_vae, solubility_bins, output_path,
-                        f'vae_ld{latent_dim}_id{intermediate_dim}_2d_plot_discrete.png',
-                        f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, Colored by Solubility Category)',
+                        f'vae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_2d_plot_discrete.png',
+                        f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}, Colored by Solubility Category)',
                         'tab10', 'Solubility Category'
                     )
 
             # Apply iterative label spilling clustering
             print(
-                f"\nApplying iterative label spilling clustering to VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}) results...")
+                f"\nApplying iterative label spilling clustering to VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) results..."
+            )
             cluster_labels, silhouette, history = iterative_label_spilling(X_vae)
 
             # Record clustering results
             clustering_results.append({
                 'method': 'VAE',
-                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}',
+                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}',
                 'n_clusters': len(np.unique(cluster_labels)),
                 'silhouette_score': silhouette,
                 'cluster_history': history
@@ -372,14 +379,16 @@ def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
             if latent_dim == 2:
                 # Clustering result visualization
                 plot_clustering_result(
-                    X_vae, cluster_labels, output_path, f'vae_ld{latent_dim}_id{intermediate_dim}_clusters.png',
-                    f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}) - Iterative Label Spilling Clustering ({len(np.unique(cluster_labels))} clusters)'
+                    X_vae, cluster_labels, output_path,
+                    f'vae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_clusters.png',
+                    f'VAE 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) - Iterative Label Spilling Clustering ({len(np.unique(cluster_labels))} clusters)'
                 )
 
                 # Silhouette history visualization
                 plot_silhouette_history(
-                    history, silhouette, output_path, f'vae_ld{latent_dim}_id{intermediate_dim}_silhouette_history.png',
-                    f'VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}) - Silhouette Coefficient vs Number of Clusters'
+                    history, silhouette, output_path,
+                    f'vae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_silhouette_history.png',
+                    f'VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) - Silhouette Coefficient vs Number of Clusters'
                 )
 
     return results, clustering_results
@@ -508,6 +517,7 @@ def create_comparison_visualizations(results_df, clustering_df, output_path):
 def run_dimensionality_reduction(input_path, output_path):
     """
     Main function for running dimensionality reduction, clustering, and evaluation
+    with enhanced metrics and expanded VAE parameters
 
     Parameters:
     input_path: Input data path
@@ -545,21 +555,13 @@ def run_dimensionality_reduction(input_path, output_path):
     all_results.extend(umap_results)
     all_clustering_results.extend(umap_clustering_results)
 
-    # Run VAE analysis
+    # Run VAE analysis with expanded parameters
     vae_results, vae_clustering_results = run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path)
     all_results.extend(vae_results)
     all_clustering_results.extend(vae_clustering_results)
 
-    # Prepare results summary
-    results_df = pd.DataFrame({
-        'Method': [r['method'] for r in all_results],
-        'Parameters': [r['params'] for r in all_results],
-        'Runtime (s)': [r['runtime'] for r in all_results],
-        'Neighbor Preservation': [r['metrics'].get('neighbor_preservation', None) for r in all_results],
-        'Silhouette Score': [r['metrics'].get('silhouette_score', None) for r in all_results],
-        'Variance Explained': [r['metrics'].get('variance_explained', None) for r in all_results],
-        'Reconstruction Error': [r['metrics'].get('reconstruction_error', None) for r in all_results],
-    })
+    # Prepare comprehensive results summary
+    results_df = prepare_results_summary(all_results)
 
     # Prepare clustering results summary
     clustering_df = pd.DataFrame({
@@ -576,11 +578,137 @@ def run_dimensionality_reduction(input_path, output_path):
     # Evaluate with true labels
     true_labels_df = evaluate_with_true_labels(X_scaled, solubility_bins, output_path)
 
-    # Create comparison visualizations
-    create_comparison_visualizations(results_df, clustering_df, output_path)
+    # Create comprehensive comparison visualizations
+    create_comprehensive_visualizations(results_df, clustering_df, output_path)
+
+    # Generate metrics correlation analysis
+    correlation_analysis(results_df, output_path)
 
     print(f"\nAll analyses completed! Results saved to {output_path}")
     return results_df, clustering_df
+
+
+def correlation_analysis(results_df, output_path):
+    """
+    Analyze correlations between different evaluation metrics
+
+    Parameters:
+    results_df: DataFrame with dimensionality reduction results
+    output_path: Output directory path
+    """
+    # Select numerical metrics columns
+    metric_columns = [
+        'Neighbor Preservation', 'Silhouette Score', 'Trustworthiness',
+        'Continuity', 'Runtime (s)', 'Reconstruction Error'
+    ]
+
+    # Filter rows with non-null values for the relevant metrics
+    metrics_data = results_df[metric_columns].dropna(how='all')
+
+    if len(metrics_data) > 1:  # Ensure there's enough data for correlation
+        try:
+            # Calculate correlation matrix
+            corr_matrix = metrics_data.corr()
+
+            # Plot correlation heatmap
+            plt.figure(figsize=(10, 8))
+            plt.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
+            plt.colorbar(label='Correlation Coefficient')
+            plt.xticks(range(len(corr_matrix.columns)), corr_matrix.columns, rotation=45, ha='right')
+            plt.yticks(range(len(corr_matrix.columns)), corr_matrix.columns)
+            plt.title('Correlation Between Evaluation Metrics')
+
+            # Add correlation values
+            for i in range(len(corr_matrix.columns)):
+                for j in range(len(corr_matrix.columns)):
+                    plt.text(j, i, f"{corr_matrix.iloc[i, j]:.2f}",
+                             ha='center', va='center',
+                             color='white' if abs(corr_matrix.iloc[i, j]) > 0.5 else 'black')
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_path, 'metrics_correlation.png'))
+            plt.close()
+
+            # Save correlation matrix to CSV
+            corr_matrix.to_csv(os.path.join(output_path, 'metrics_correlation.csv'))
+            print(f"Metrics correlation analysis saved to {output_path}")
+        except Exception as e:
+            print(f"Error in correlation analysis: {str(e)}")
+
+
+def prepare_results_summary(all_results):
+    """
+    Prepare comprehensive results summary from all dimensionality reduction methods
+
+    Parameters:
+    all_results: List of results dictionaries from all dimensionality reduction methods
+
+    Returns:
+    results_df: DataFrame with comprehensive results summary
+    """
+    results_df = pd.DataFrame({
+        'Method': [r['method'] for r in all_results],
+        'Parameters': [r['params'] for r in all_results],
+        'Runtime (s)': [r['runtime'] for r in all_results],
+        'Neighbor Preservation': [r['metrics'].get('neighbor_preservation', None) for r in all_results],
+        'Silhouette Score': [r['metrics'].get('silhouette_score', None) for r in all_results],
+        'Trustworthiness': [r['metrics'].get('trustworthiness', None) for r in all_results],
+        'Continuity': [r['metrics'].get('continuity', None) for r in all_results],
+        'Variance Explained': [r['metrics'].get('variance_explained', None) for r in all_results],
+        'Reconstruction Error': [r['metrics'].get('reconstruction_error', None) for r in all_results],
+        'KL Divergence': [r['metrics'].get('kl_divergence', None) for r in all_results],
+    })
+
+    return results_df
+
+
+def create_comprehensive_visualizations(results_df, clustering_df, output_path):
+    """
+    Create comprehensive comparative visualizations of dimensionality reduction and clustering results
+
+    Parameters:
+    results_df: DataFrame with dimensionality reduction results
+    clustering_df: DataFrame with clustering results
+    output_path: Output directory path
+    """
+    metrics_to_plot = [
+        ('Runtime (s)', 'Runtime Comparison'),
+        ('Neighbor Preservation', 'Neighbor Preservation Comparison'),
+        ('Trustworthiness', 'Trustworthiness Comparison'),
+        ('Continuity', 'Continuity Comparison'),
+        ('Silhouette Score', 'Silhouette Score Comparison'),
+    ]
+
+    # Plot each metric
+    for metric, title in metrics_to_plot:
+        if metric in results_df.columns and any(~results_df[metric].isna()):
+            plot_comparison_bar(
+                results_df, 'Dimensionality Reduction Method', metric,
+                f'{title} of Dimensionality Reduction Methods', output_path,
+                f'{metric.lower().replace(" ", "_")}_comparison.png'
+            )
+
+    # VAE-specific metrics
+    vae_results = results_df[results_df['Method'] == 'VAE'].copy()
+    if not vae_results.empty:
+        vae_metrics = [
+            ('KL Divergence', 'KL Divergence Comparison for VAE'),
+            ('Reconstruction Error', 'Reconstruction Error Comparison for VAE')
+        ]
+
+        for metric, title in vae_metrics:
+            if metric in vae_results.columns and any(~vae_results[metric].isna()):
+                plot_comparison_bar(
+                    vae_results, 'Parameters', metric, title, output_path,
+                    f'vae_{metric.lower().replace(" ", "_")}_comparison.png'
+                )
+
+    # Clustering silhouette score comparison
+    plot_comparison_bar(
+        clustering_df, 'Dimensionality Reduction Method', 'Silhouette Score',
+        'Iterative Label Spilling Clustering Silhouette Score Comparison', output_path,
+        'clustering_silhouette_comparison.png'
+    )
 
 
 if __name__ == "__main__":

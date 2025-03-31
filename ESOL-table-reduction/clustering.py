@@ -138,7 +138,7 @@ def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubilit
     metrics['continuity'] = calculate_continuity(X_original, X_embedded, n_neighbors=n_neighbors_trust)
     print(f"Continuity (k={n_neighbors_trust}): {metrics['continuity']:.4f}")
 
-    return metricsimport
+    return metrics
 
 
 
@@ -244,54 +244,3 @@ def iterative_label_spilling(X, n_clusters_init=2, max_clusters=15, min_silhouet
     print(f"Best number of clusters: {np.unique(best_labels).size}, Silhouette: {best_silhouette:.4f}")
     return best_labels, best_silhouette, history
 
-
-def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubility_bins=None):
-    """
-    Evaluate quality of dimensionality reduction results
-
-    Parameters:
-    X_original: Data in original feature space
-    X_embedded: Data after dimensionality reduction
-    solubility_values: Continuous solubility values (for visualization)
-    solubility_bins: Discretized solubility categories (for evaluating clustering quality)
-
-    Returns:
-    metrics: Dictionary containing various evaluation metrics
-    """
-    metrics = {}
-
-    # 1. Silhouette coefficient (using discretized solubility category labels)
-    if solubility_bins is not None and len(np.unique(solubility_bins)) > 1:
-        try:
-            metrics['silhouette_score'] = silhouette_score(X_embedded, solubility_bins)
-            print(f"Silhouette coefficient using discretized solubility categories: {metrics['silhouette_score']:.4f}")
-        except Exception as e:
-            print(f"Error calculating silhouette coefficient: {str(e)}")
-            metrics['silhouette_score'] = None
-
-    # 2. Neighbor preservation rate
-    k = min(20, len(X_original) - 1)  # Number of neighbors, not exceeding number of samples minus 1
-
-    # Calculate k nearest neighbors in original space
-    nbrs_orig = NearestNeighbors(n_neighbors=k + 1).fit(X_original)
-    distances_orig, indices_orig = nbrs_orig.kneighbors(X_original)
-
-    # Calculate k nearest neighbors in embedded space
-    nbrs_embedded = NearestNeighbors(n_neighbors=k + 1).fit(X_embedded)
-    distances_embedded, indices_embedded = nbrs_embedded.kneighbors(X_embedded)
-
-    # Calculate neighbor preservation rate
-    preserved_neighbors = 0
-    total_neighbors = 0
-
-    for i in range(len(X_original)):
-        # Skip first neighbor (sample itself)
-        orig_neighbors = set(indices_orig[i][1:])
-        embedded_neighbors = set(indices_embedded[i][1:])
-        preserved_neighbors += len(orig_neighbors.intersection(embedded_neighbors))
-        total_neighbors += k
-
-    metrics['neighbor_preservation'] = preserved_neighbors / total_neighbors
-    print(f"Neighbor preservation rate: {metrics['neighbor_preservation']:.4f}")
-
-    return metrics
