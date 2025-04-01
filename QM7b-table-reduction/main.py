@@ -12,7 +12,7 @@ from sklearn.metrics import silhouette_score
 from data_loader import load_data, preprocess_data
 from clustering import iterative_label_spilling, evaluate_embedding
 from dim_reduction import (perform_pca, perform_tsne,
-                          perform_umap, perform_vae)
+                          perform_umap, perform_vae,perform_autoencoder)
 
 
 def run_dimensionality_reduction(input_path, output_path):
@@ -546,8 +546,8 @@ def run_autoencoder_analysis(X_scaled, energy_values, energy_bins, output_path):
                 # 连续值着色
                 plot_2d_embedding(
                     X_ae, energy_values, output_path, f'ae_ed{encoding_dim}_id{intermediate_dim}_2d_plot.png',
-                    f'自编码器2D投影 (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})',
-                    'viridis', '能量值'
+                    f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})',
+                    'viridis', 'Energy Value'
                 )
 
                 # 离散类别着色
@@ -555,8 +555,8 @@ def run_autoencoder_analysis(X_scaled, energy_values, energy_bins, output_path):
                     plot_2d_embedding(
                         X_ae, energy_bins, output_path,
                         f'ae_ed{encoding_dim}_id{intermediate_dim}_2d_plot_discrete.png',
-                        f'自编码器2D投影 (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}, 按能量类别着色)',
-                        'tab10', '能量类别'
+                        f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}, Colored by Energy Category)',
+                        'tab10', 'Energy Category'
                     )
 
             # 应用迭代标签溢出聚类
@@ -578,14 +578,14 @@ def run_autoencoder_analysis(X_scaled, energy_values, energy_bins, output_path):
                 # 聚类结果可视化
                 plot_clustering_result(
                     X_ae, cluster_labels, output_path, f'ae_ed{encoding_dim}_id{intermediate_dim}_clusters.png',
-                    f'自编码器2D投影 (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - 迭代标签溢出聚类 ({len(np.unique(cluster_labels))} 个聚类)'
+                    f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - Iterative Label Spilling Clustering ({len(np.unique(cluster_labels))} clusters)'
                 )
 
                 # 轮廓历史可视化
                 plot_silhouette_history(
                     history, silhouette, output_path,
                     f'ae_ed{encoding_dim}_id{intermediate_dim}_silhouette_history.png',
-                    f'自编码器 (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - 轮廓系数与聚类数量关系'
+                    f'AE (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - Silhouette Coefficient vs Number of Clusters'
                 )
 
     return results, clustering_results

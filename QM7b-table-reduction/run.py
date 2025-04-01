@@ -26,8 +26,8 @@ if __name__ == "__main__":
     from main import run_dimensionality_reduction
 
     # Set input and output paths
-    input_path = r"D:\materproject\all-reps\QM7b\QM7-table"
-    output_path = r"D:\materproject\single-rep-rd\table\QM7"
+    input_path = r"D:\materproject\all-reps\QM7b\QM7b-table"
+    output_path = r"D:\materproject\single-rep-rd\table\QM7b"
 
     # Allow modification of paths via command line arguments
     if len(sys.argv) > 1:

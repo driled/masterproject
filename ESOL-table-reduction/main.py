@@ -11,7 +11,7 @@ from sklearn.metrics import silhouette_score
 from data_loader import load_data, preprocess_data
 from clustering import iterative_label_spilling, evaluate_embedding
 from dim_reduction import (perform_pca, perform_tsne,
-                           perform_umap, perform_vae)
+                           perform_umap, perform_vae,perform_autoencoder)
 from visualization import (save_embedding_csv, plot_2d_embedding,
                            plot_clustering_result, plot_silhouette_history,
                            plot_comparison_bar, save_results_summary)
@@ -394,6 +394,116 @@ def run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path):
     return results, clustering_results
 
 
+def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, output_path):
+    """
+    Run standard autoencoder dimensionality reduction, clustering, and evaluation
+
+    Parameters:
+    X_scaled: Standardized feature data
+    solubility_values: Continuous solubility values
+    solubility_bins: Discretized solubility categories
+    output_path: Output directory path
+
+    Returns:
+    results: List of results dictionaries
+    clustering_results: List of clustering results dictionaries
+    """
+    import time
+    import numpy as np
+    from clustering import iterative_label_spilling
+    from clustering import evaluate_embedding
+    from dim_reduction import perform_autoencoder
+    from visualization import (save_embedding_csv, plot_2d_embedding,
+                               plot_clustering_result, plot_silhouette_history)
+
+    results = []
+    clustering_results = []
+
+    print("\nRunning Standard Autoencoder dimensionality reduction...")
+
+    # Parameter grid for autoencoder
+    for latent_dim in [2, 5, 10, 20]:
+        for intermediate_dim in [128, 256, 512]:
+            # For higher latent dimensions, try more training epochs
+            epochs = 100 if latent_dim >= 10 else 50
+            print(f"  latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}")
+            start_time = time.time()
+
+            # Perform autoencoder dimensionality reduction
+            X_ae, encoder, ae_metrics = perform_autoencoder(
+                X_scaled, latent_dim, intermediate_dim, epochs=epochs)
+            runtime = time.time() - start_time
+
+            # Save reduction results
+            save_embedding_csv(X_ae, output_path, f"ae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}.csv")
+
+            # Evaluate reduction quality
+            eval_metrics = evaluate_embedding(X_scaled, X_ae, solubility_values, solubility_bins)
+
+            # Merge all metrics
+            all_metrics = {**eval_metrics, **ae_metrics}
+
+            # Record results
+            results.append({
+                'method': 'Autoencoder',
+                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}',
+                'runtime': runtime,
+                'metrics': all_metrics
+            })
+
+            # If 2D, create visualizations
+            if latent_dim == 2:
+                # Continuous value coloring
+                plot_2d_embedding(
+                    X_ae, solubility_values, output_path,
+                    f'ae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_2d_plot.png',
+                    f'Autoencoder 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs})',
+                    'viridis', 'Solubility Value'
+                )
+
+                # Discrete category coloring
+                if solubility_bins is not None:
+                    plot_2d_embedding(
+                        X_ae, solubility_bins, output_path,
+                        f'ae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_2d_plot_discrete.png',
+                        f'Autoencoder 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}, Colored by Solubility Category)',
+                        'tab10', 'Solubility Category'
+                    )
+
+            # Apply iterative label spilling clustering
+            print(
+                f"\nApplying iterative label spilling clustering to Autoencoder (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) results..."
+            )
+            cluster_labels, silhouette, history = iterative_label_spilling(X_ae)
+
+            # Record clustering results
+            clustering_results.append({
+                'method': 'Autoencoder',
+                'params': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}',
+                'n_clusters': len(np.unique(cluster_labels)),
+                'silhouette_score': silhouette,
+                'cluster_history': history
+            })
+
+            # If 2D, create clustering visualizations
+            if latent_dim == 2:
+                # Clustering result visualization
+                plot_clustering_result(
+                    X_ae, cluster_labels, output_path,
+                    f'ae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_clusters.png',
+                    f'Autoencoder 2D Projection (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) - Iterative Label Spilling Clustering ({len(np.unique(cluster_labels))} clusters)'
+                )
+
+                # Silhouette history visualization
+                plot_silhouette_history(
+                    history, silhouette, output_path,
+                    f'ae_ld{latent_dim}_id{intermediate_dim}_ep{epochs}_silhouette_history.png',
+                    f'Autoencoder (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) - Silhouette Coefficient vs Number of Clusters'
+                )
+
+    return results, clustering_results
+
+
 def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
     """
     Calculate silhouette scores using true solubility categories
@@ -467,6 +577,20 @@ def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
             except:
                 pass
 
+    # Autoencoder dimensionality reduction
+    for latent_dim in [2, 5, 10]:
+        for intermediate_dim in [128, 256]:
+            X_reduced = perform_autoencoder(X_scaled, latent_dim, intermediate_dim)[0]
+            try:
+                s_score = silhouette_score(X_reduced, solubility_bins)
+                silhouette_with_true_labels.append({
+                    'Method': 'Autoencoder',
+                    'Parameters': f'latent_dim={latent_dim}, intermediate_dim={intermediate_dim}',
+                    'Silhouette Score (True Labels)': s_score
+                })
+            except:
+                pass
+
     # Create DataFrame
     true_labels_df = pd.DataFrame(silhouette_with_true_labels)
 
@@ -476,48 +600,10 @@ def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
     return true_labels_df
 
 
-def create_comparison_visualizations(results_df, clustering_df, output_path):
-    """
-    Create comparative visualizations of dimensionality reduction and clustering results
-
-    Parameters:
-    results_df: DataFrame with dimensionality reduction results
-    clustering_df: DataFrame with clustering results
-    output_path: Output directory path
-    """
-    # 1. Runtime comparison
-    plot_comparison_bar(
-        results_df, 'Dimensionality Reduction Method', 'Runtime (s)',
-        'Runtime Comparison of Dimensionality Reduction Methods', output_path, 'runtime_comparison.png'
-    )
-
-    # 2. Neighbor preservation comparison
-    plot_comparison_bar(
-        results_df, 'Dimensionality Reduction Method', 'Neighbor Preservation',
-        'Neighbor Preservation Comparison of Dimensionality Reduction Methods', output_path,
-        'neighbor_preservation_comparison.png'
-    )
-
-    # 3. Silhouette score comparison (if data exists)
-    if any(~results_df['Silhouette Score'].isna()):
-        plot_comparison_bar(
-            results_df, 'Dimensionality Reduction Method', 'Silhouette Score',
-            'Silhouette Score Comparison of Dimensionality Reduction Methods', output_path,
-            'silhouette_score_comparison.png'
-        )
-
-    # 4. Clustering silhouette score comparison
-    plot_comparison_bar(
-        clustering_df, 'Dimensionality Reduction Method', 'Silhouette Score',
-        'Iterative Label Spilling Clustering Silhouette Score Comparison', output_path,
-        'clustering_silhouette_comparison.png'
-    )
-
-
 def run_dimensionality_reduction(input_path, output_path):
     """
     Main function for running dimensionality reduction, clustering, and evaluation
-    with enhanced metrics and expanded VAE parameters
+    with enhanced metrics and expanded parameters
 
     Parameters:
     input_path: Input data path
@@ -555,10 +641,16 @@ def run_dimensionality_reduction(input_path, output_path):
     all_results.extend(umap_results)
     all_clustering_results.extend(umap_clustering_results)
 
-    # Run VAE analysis with expanded parameters
+    # Run VAE analysis
     vae_results, vae_clustering_results = run_vae_analysis(X_scaled, solubility_values, solubility_bins, output_path)
     all_results.extend(vae_results)
     all_clustering_results.extend(vae_clustering_results)
+
+    # Run Standard Autoencoder analysis
+    ae_results, ae_clustering_results = run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins,
+                                                                 output_path)
+    all_results.extend(ae_results)
+    all_clustering_results.extend(ae_clustering_results)
 
     # Prepare comprehensive results summary
     results_df = prepare_results_summary(all_results)
@@ -584,8 +676,166 @@ def run_dimensionality_reduction(input_path, output_path):
     # Generate metrics correlation analysis
     correlation_analysis(results_df, output_path)
 
+    # Add a comparative analysis between standard AE and VAE
+    create_ae_vae_comparison(results_df, output_path)
+
     print(f"\nAll analyses completed! Results saved to {output_path}")
     return results_df, clustering_df
+
+
+def create_ae_vae_comparison(results_df, output_path):
+    """
+    Create comparative analysis between standard Autoencoder and VAE
+
+    Parameters:
+    results_df: DataFrame with dimensionality reduction results
+    output_path: Output directory path
+    """
+    import os
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    # Filter for just AE and VAE results
+    ae_vae_df = results_df[results_df['Method'].isin(['Autoencoder', 'VAE'])].copy()
+
+    if ae_vae_df.empty or len(ae_vae_df) < 2:
+        print("Not enough AE and VAE data for comparison")
+        return
+
+    try:
+        # Extract parameters for better display
+        ae_vae_df['Latent Dim'] = ae_vae_df['Parameters'].apply(
+            lambda x: int(x.split('latent_dim=')[1].split(',')[0]) if 'latent_dim=' in x else None)
+
+        # Prepare comparison metrics
+        metrics_to_compare = ['Reconstruction Error', 'Trustworthiness',
+                              'Continuity', 'Neighbor Preservation', 'Runtime (s)']
+
+        for metric in metrics_to_compare:
+            if metric in ae_vae_df.columns and not ae_vae_df[metric].isna().all():
+                plt.figure(figsize=(12, 6))
+
+                # Group by method and latent dimension
+                grouped = ae_vae_df.groupby(['Method', 'Latent Dim'])[metric].mean().reset_index()
+
+                # Pivot for easier plotting
+                pivot_df = grouped.pivot(index='Latent Dim', columns='Method', values=metric)
+
+                # Plot
+                ax = pivot_df.plot(kind='bar', rot=0)
+                plt.title(f'Comparison of {metric} between Autoencoder and VAE')
+                plt.xlabel('Latent Dimension')
+                plt.ylabel(metric)
+                plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+                # Add value labels on bars
+                for container in ax.containers:
+                    ax.bar_label(container, fmt='%.3f')
+
+                # Save figure
+                output_file = os.path.join(output_path, f'ae_vae_comparison_{metric.lower().replace(" ", "_")}.png')
+                plt.tight_layout()
+                plt.savefig(output_file)
+                plt.close()
+
+                print(f"AE vs VAE comparison for {metric} saved to {output_file}")
+
+        # Special comparison for VAE's KL divergence vs AE's reconstruction error
+        if 'KL Divergence' in ae_vae_df.columns and 'Reconstruction Error' in ae_vae_df.columns:
+            plt.figure(figsize=(12, 8))
+
+            # Scatter plot
+            vae_data = ae_vae_df[ae_vae_df['Method'] == 'VAE']
+            ae_data = ae_vae_df[ae_vae_df['Method'] == 'Autoencoder']
+
+            if not vae_data.empty and not ae_data.empty:
+                plt.scatter(vae_data['KL Divergence'], vae_data['Reconstruction Error'],
+                            label='VAE', alpha=0.7, s=100)
+
+                # For AE, use a dummy x value (0) for KL divergence
+                plt.scatter([0] * len(ae_data), ae_data['Reconstruction Error'],
+                            label='Autoencoder', alpha=0.7, s=100)
+
+                plt.title('VAE KL Divergence vs Reconstruction Error')
+                plt.xlabel('KL Divergence (0 for standard AE)')
+                plt.ylabel('Reconstruction Error')
+                plt.legend()
+                plt.grid(True, linestyle='--', alpha=0.7)
+
+                # Save figure
+                output_file = os.path.join(output_path, 'ae_vae_kl_vs_recon.png')
+                plt.tight_layout()
+                plt.savefig(output_file)
+                plt.close()
+
+                print(f"KL Divergence vs Reconstruction Error comparison saved to {output_file}")
+
+        # Create a summary table comparing AE and VAE across all latent dimensions
+        summary_table = pd.DataFrame()
+
+        for method in ['Autoencoder', 'VAE']:
+            method_data = ae_vae_df[ae_vae_df['Method'] == method]
+            if not method_data.empty:
+                for metric in metrics_to_compare:
+                    if metric in method_data.columns and not method_data[metric].isna().all():
+                        # Average across all parameter combinations
+                        avg_value = method_data[metric].mean()
+                        summary_table.loc[method, metric] = avg_value
+
+        if not summary_table.empty:
+            # Add improvement percentage
+            for metric in summary_table.columns:
+                if 'Autoencoder' in summary_table.index and 'VAE' in summary_table.index:
+                    ae_value = summary_table.loc['Autoencoder', metric]
+                    vae_value = summary_table.loc['VAE', metric]
+
+                    # For metrics where higher is better
+                    if metric in ['Trustworthiness', 'Continuity', 'Neighbor Preservation']:
+                        pct_change = ((vae_value - ae_value) / ae_value) * 100
+                    # For metrics where lower is better
+                    else:
+                        pct_change = ((ae_value - vae_value) / ae_value) * 100
+
+                    summary_table.loc['Improvement (%)', metric] = pct_change
+
+            # Save summary table
+            output_file = os.path.join(output_path, 'ae_vae_comparison_summary.csv')
+            summary_table.to_csv(output_file)
+            print(f"AE vs VAE summary comparison saved to {output_file}")
+
+    except Exception as e:
+        print(f"Error in AE vs VAE comparison: {str(e)}")
+
+
+def prepare_results_summary(all_results):
+    """
+    Prepare comprehensive results summary from all dimensionality reduction methods
+
+    Parameters:
+    all_results: List of results dictionaries from all dimensionality reduction methods
+
+    Returns:
+    results_df: DataFrame with comprehensive results summary
+    """
+    results_df = pd.DataFrame({
+        'Method': [r['method'] for r in all_results],
+        'Parameters': [r['params'] for r in all_results],
+        'Runtime (s)': [r['runtime'] for r in all_results],
+        'Neighbor Preservation': [r['metrics'].get('neighbor_preservation', None) for r in all_results],
+        'Silhouette Score': [r['metrics'].get('silhouette_score', None) for r in all_results],
+        'Trustworthiness': [r['metrics'].get('trustworthiness', None) for r in all_results],
+        'Continuity': [r['metrics'].get('continuity', None) for r in all_results],
+        'Variance Explained': [r['metrics'].get('variance_explained', None) for r in all_results],
+        'Reconstruction Error': [r['metrics'].get('reconstruction_error', None) for r in all_results],
+        'KL Divergence': [r['metrics'].get('kl_divergence', None) for r in all_results],
+    })
+
+    return results_df
+
+
+
+
+
 
 
 def correlation_analysis(results_df, output_path):

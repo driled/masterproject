@@ -229,3 +229,88 @@ def calculate_kl_divergence(z_mean, z_log_var):
     kl_loss = -0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var))
 
     return float(kl_loss.numpy())  # Convert tensor to Python float
+
+
+def create_autoencoder(input_dim, latent_dim, intermediate_dim=256):
+    """
+    Create a standard autoencoder model for dimensionality reduction
+
+    Parameters:
+    input_dim: Input feature dimension
+    latent_dim: Latent space dimension
+    intermediate_dim: Intermediate layer dimension
+
+    Returns:
+    autoencoder: Complete autoencoder model
+    encoder: Encoder part of the model
+    decoder: Decoder part of the model
+    """
+    from tensorflow.keras import layers, Model
+    import tensorflow.keras.backend as K
+
+    # Encoder
+    encoder_inputs = layers.Input(shape=(input_dim,), name='encoder_input')
+    x = layers.Dense(intermediate_dim, activation='relu')(encoder_inputs)
+    encoded = layers.Dense(latent_dim, name='encoded')(x)
+
+    # Decoder
+    decoder_input = layers.Input(shape=(latent_dim,), name='decoder_input')
+    x = layers.Dense(intermediate_dim, activation='relu')(decoder_input)
+    decoded = layers.Dense(input_dim, activation='linear')(x)
+
+    # Models
+    encoder = Model(encoder_inputs, encoded, name='encoder')
+    decoder = Model(decoder_input, decoded, name='decoder')
+
+    # Autoencoder (encoder + decoder)
+    autoencoder_input = layers.Input(shape=(input_dim,))
+    encoded_output = encoder(autoencoder_input)
+    decoded_output = decoder(encoded_output)
+
+    autoencoder = Model(autoencoder_input, decoded_output, name='autoencoder')
+    autoencoder.compile(optimizer='adam', loss='mse')
+
+    return autoencoder, encoder, decoder
+
+
+def perform_autoencoder(X, latent_dim, intermediate_dim=256, epochs=50, batch_size=32):
+    """
+    Execute standard autoencoder dimensionality reduction
+
+    Parameters:
+    X: Input data matrix
+    latent_dim: Latent space dimension
+    intermediate_dim: Intermediate layer dimension
+    epochs: Number of training epochs
+    batch_size: Batch size
+
+    Returns:
+    X_ae: Reduced dimensionality data
+    encoder: Encoder model
+    metrics: Model-specific metrics including reconstruction error
+    """
+    import numpy as np
+
+    # Create autoencoder model
+    autoencoder, encoder, decoder = create_autoencoder(X.shape[1], latent_dim, intermediate_dim)
+
+    # Train autoencoder
+    history = autoencoder.fit(X, X, epochs=epochs, batch_size=batch_size, verbose=0)
+
+    # Get embeddings
+    X_ae = encoder.predict(X)
+
+    # Calculate reconstruction error
+    X_reconstructed = autoencoder.predict(X)
+    reconstruction_error = np.mean(np.square(X - X_reconstructed))
+
+    metrics = {
+        'reconstruction_error': reconstruction_error,
+        'final_loss': history.history['loss'][-1] if history.history['loss'] else None
+    }
+
+    print(f"Autoencoder (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}):")
+    print(f"  Training completed ({epochs} epochs)")
+    print(f"  Reconstruction error: {reconstruction_error:.4f}")
+
+    return X_ae, encoder, metrics

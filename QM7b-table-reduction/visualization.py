@@ -158,7 +158,7 @@ def plot_clustering_result(X_embedded, cluster_labels, output_path, filename, ti
     else:
         plt.title(title)
 
-    plt.colorbar(scatter, label='聚类')
+    plt.colorbar(scatter, label='clustering')
 
     output_file = os.path.join(output_path, filename)
     plt.savefig(output_file, bbox_inches='tight')
@@ -189,8 +189,8 @@ def plot_silhouette_history(history, best_silhouette, output_path, filename, tit
              marker='o')
 
     plt.axhline(y=best_silhouette, color='r', linestyle='--')
-    plt.xlabel('聚类数量')
-    plt.ylabel('轮廓系数')
+    plt.xlabel('clusters')
+    plt.ylabel('silhouette score')
     plt.title(title)
     plt.grid(True)
 
