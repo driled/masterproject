@@ -160,7 +160,7 @@ def create_vae(input_dim, latent_dim, intermediate_dim=256):
     return vae, encoder, decoder
 
 
-def perform_vae(X, latent_dim, intermediate_dim=256, epochs=50, batch_size=32):
+def perform_vae(X, latent_dim, intermediate_dim=256, epochs=20, batch_size=32):
     """
     Execute VAE dimensionality reduction with KL divergence tracking
 

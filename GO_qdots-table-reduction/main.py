@@ -177,7 +177,7 @@ def run_pca_analysis(X_scaled, energy_values, energy_bins, output_path):
                 )
 
         # Apply iterative label spilling clustering
-        print(f"\nApplying label spreading clustering to PCA (n_components={n_components}) results...")
+        print(f"\nApplying iterative label spilling clustering to PCA (n_components={n_components}) results...")
         cluster_labels, silhouette, history = label_spreading_clustering(X_pca)
 
         # Record clustering results
@@ -268,7 +268,7 @@ def run_tsne_analysis(X_scaled, energy_values, energy_bins, output_path):
 
             # Apply  label spreading clustering
             print(
-                f"\nApplying label spreading clustering to t-SNE (perplexity={perplexity}, n_components={n_components}) results...")
+                f"\nApplying iterative label spilling clustering to t-SNE (perplexity={perplexity}, n_components={n_components}) results...")
             cluster_labels, silhouette, history = label_spreading_clustering(X_tsne)
 
             # Record clustering results
@@ -362,7 +362,7 @@ def run_umap_analysis(X_scaled, energy_values, energy_bins, output_path):
 
                 # Apply  label spreading clustering
                 print(
-                    f"\nApplying  label spreading clustering to UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}, n_components={n_components}) results...")
+                    f"\nApplying iterative label spilling clustering to UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}, n_components={n_components}) results...")
                 cluster_labels, silhouette, history = label_spreading_clustering(X_umap)
 
                 # Record clustering results

@@ -5,13 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="49907623-c28e-410d-8cd8-406efba9c4c4" name="Changes" comment="qm7-table-dr">
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/clustering.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/data_loader.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/dim_reduction.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/run.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GO_qdots-table-reduction/visualization.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ESOL-table-reduction/clustering.py" beforeDir="false" afterPath="$PROJECT_DIR$/ESOL-table-reduction/clustering.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ESOL-table-reduction/dim_reduction.py" beforeDir="false" afterPath="$PROJECT_DIR$/ESOL-table-reduction/dim_reduction.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ESOL-table-reduction/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/ESOL-table-reduction/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QM7b-table-reduction/data_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/QM7b-table-reduction/data_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QM7b-table-reduction/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/QM7b-table-reduction/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QM7b-table-reduction/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/QM7b-table-reduction/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QM7b-table-reduction/visualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/QM7b-table-reduction/visualization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QM7b-table-reduction/clustering.py" beforeDir="false" afterPath="$PROJECT_DIR$/QM7b-table-reduction/clustering.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,60 +62,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.ESOL-table-rd.executor&quot;: &quot;Run&quot;,
-    &quot;Python.ESOL-tabular-rd.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.run (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.run.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/materproject/origin/QM7b-table-reduction&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.ESOL-table-rd.executor": "Run",
+    "Python.ESOL-tabular-rd.executor": "Run",
+    "Python.main (1).executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.run (1).executor": "Run",
+    "Python.run (2).executor": "Run",
+    "Python.run.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/materproject/origin/ESOL-table-reduction",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\materproject\origin\ESOL-table-reduction" />
+      <recent name="D:\materproject\origin\GO_qdots-table-reduction" />
       <recent name="D:\materproject\origin\QM7b-table-reduction" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\materproject\code\ESOL-table-reduction" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.run (1)">
-    <configuration name="ESOL-table-rd" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="code" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ESOL-table-rd.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.run">
     <configuration name="ESOL-tabular-rd" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="code" />
       <option name="ENV_FILES" value="" />
@@ -203,6 +188,29 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="run (2)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="code" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/GO_qdots-table-reduction" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/GO_qdots-table-reduction/run.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="run" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="code" />
       <option name="ENV_FILES" value="" />
@@ -228,11 +236,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.run (1)" />
         <item itemvalue="Python.run" />
+        <item itemvalue="Python.run (2)" />
+        <item itemvalue="Python.run (1)" />
         <item itemvalue="Python.main (1)" />
         <item itemvalue="Python.ESOL-tabular-rd" />
-        <item itemvalue="Python.ESOL-table-rd" />
       </list>
     </recent_temporary>
   </component>
@@ -260,7 +268,8 @@
       <workItem from="1743438315229" duration="8988000" />
       <workItem from="1743480598815" duration="4808000" />
       <workItem from="1743502797366" duration="4014000" />
-      <workItem from="1743520848454" duration="5503000" />
+      <workItem from="1743520848454" duration="7648000" />
+      <workItem from="1743601001580" duration="9657000" />
     </task>
     <task id="LOCAL-00001" summary="esol-table-rd">
       <option name="closed" value="true" />
@@ -302,7 +311,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743473781903</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="qm7-table-dr">
+      <option name="closed" value="true" />
+      <created>1743528235047</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1743528235047</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -326,12 +343,13 @@
     <option name="LAST_COMMIT_MESSAGE" value="qm7-table-dr" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/origin$run.coverage" NAME="run Coverage Results" MODIFIED="1743475593905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
+    <SUITE FILE_PATH="coverage/origin$run.coverage" NAME="run Coverage Results" MODIFIED="1743618727284" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
     <SUITE FILE_PATH="coverage/code$run.coverage" NAME="run Coverage Results" MODIFIED="1743435269962" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
+    <SUITE FILE_PATH="coverage/origin$run__2_.coverage" NAME="run (2) Coverage Results" MODIFIED="1743601720138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GO_qdots-table-reduction" />
     <SUITE FILE_PATH="coverage/code$main.coverage" NAME="main Coverage Results" MODIFIED="1743345717803" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/code$ESOL_tabular_rd.coverage" NAME="ESOL-tabular-rd Coverage Results" MODIFIED="1743346396705" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/code$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1743346433607" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
-    <SUITE FILE_PATH="coverage/origin$run__1_.coverage" NAME="run (1) Coverage Results" MODIFIED="1743527780725" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/QM7b-table-reduction" />
+    <SUITE FILE_PATH="coverage/origin$run__1_.coverage" NAME="run (1) Coverage Results" MODIFIED="1743528246851" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/QM7b-table-reduction" />
     <SUITE FILE_PATH="coverage/origin$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1743474881415" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
     <SUITE FILE_PATH="coverage/code$ESOL_table_rd.coverage" NAME="ESOL-table-rd Coverage Results" MODIFIED="1743344920737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
