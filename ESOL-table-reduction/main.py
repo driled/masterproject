@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
 
 from data_loader import load_data, preprocess_data
-from clustering import label_spreading_clustering, evaluate_embedding
+from clustering import label_spreading_clustering, evaluate_embedding, label_spreading_clustering_with_solubility
 from dim_reduction import (perform_pca, perform_tsne,
                           perform_umap, perform_vae,perform_autoencoder)
 
@@ -178,7 +178,14 @@ def run_pca_analysis(X_scaled, energy_values, energy_bins, output_path):
 
         # Apply iterative label spilling clustering
         print(f"\nApplying label spreading clustering to PCA (n_components={n_components}) results...")
-        cluster_labels, silhouette, history = label_spreading_clustering(X_pca)
+        # 在各个降维方法的评估代码中
+        if energy_bins is not None:
+            print(f"\n应用基于溶解度的标签传播聚类...")
+            cluster_labels, silhouette, history = label_spreading_clustering_with_solubility(X_scaled, energy_bins)
+        else:
+            # 使用原始的聚类方法
+            cluster_labels, silhouette, history = label_spreading_clustering(X_scaled)
+
 
         # Record clustering results
         clustering_results.append({
@@ -269,7 +276,12 @@ def run_tsne_analysis(X_scaled, energy_values, energy_bins, output_path):
             # Apply  label spreading clustering
             print(
                 f"\nApplying label spreading clustering to t-SNE (perplexity={perplexity}, n_components={n_components}) results...")
-            cluster_labels, silhouette, history = label_spreading_clustering(X_tsne)
+            if energy_bins is not None:
+                print(f"\n应用基于溶解度的标签传播聚类...")
+                cluster_labels, silhouette, history = label_spreading_clustering_with_solubility(X_scaled, energy_bins)
+            else:
+                # 使用原始的聚类方法
+                cluster_labels, silhouette, history = label_spreading_clustering(X_scaled)
 
             # Record clustering results
             clustering_results.append({
@@ -363,7 +375,13 @@ def run_umap_analysis(X_scaled, energy_values, energy_bins, output_path):
                 # Apply  label spreading clustering
                 print(
                     f"\nApplying  label spreading clustering to UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}, n_components={n_components}) results...")
-                cluster_labels, silhouette, history = label_spreading_clustering(X_umap)
+                if energy_bins is not None:
+                    print(f"\n应用基于溶解度的标签传播聚类...")
+                    cluster_labels, silhouette, history = label_spreading_clustering_with_solubility(X_scaled,
+                                                                                                     energy_bins)
+                else:
+                    # 使用原始的聚类方法
+                    cluster_labels, silhouette, history = label_spreading_clustering(X_scaled)
 
                 # Record clustering results
                 clustering_results.append({
@@ -465,7 +483,12 @@ def run_vae_analysis(X_scaled, energy_values, energy_bins, output_path):
             print(
                 f"\nApplying  label spreading clustering to VAE (latent_dim={latent_dim}, intermediate_dim={intermediate_dim}, epochs={epochs}) results..."
             )
-            cluster_labels, silhouette, history = label_spreading_clustering(X_vae)
+            if energy_bins is not None:
+                print(f"\n应用基于溶解度的标签传播聚类...")
+                cluster_labels, silhouette, history = label_spreading_clustering_with_solubility(X_vae, energy_bins)
+            else:
+                # 使用原始的聚类方法
+                cluster_labels, silhouette, history = label_spreading_clustering(X_vae)
 
             # Record clustering results
             clustering_results.append({
@@ -562,7 +585,12 @@ def run_autoencoder_analysis(X_scaled, energy_values, energy_bins, output_path):
             # 应用迭代标签溢出聚类
             print(
                 f"\n对自编码器结果应用迭代标签溢出聚类 (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})...")
-            cluster_labels, silhouette, history = label_spreading_clustering(X_ae)
+            if energy_bins is not None:
+                print(f"\n应用基于溶解度的标签传播聚类...")
+                cluster_labels, silhouette, history = label_spreading_clustering_with_solubility(X_ae, energy_bins)
+            else:
+                # 使用原始的聚类方法
+                cluster_labels, silhouette, history = label_spreading_clustering(X_ae)
 
             # 记录聚类结果
             clustering_results.append({

@@ -236,3 +236,50 @@ def label_spreading_clustering(X, n_clusters_init=2, max_clusters=15, min_silhou
     print(f"Best number of clusters: {len(np.unique(best_labels))}, Silhouette: {best_silhouette:.4f}")
     return best_labels, best_silhouette, history
 
+
+def label_spreading_clustering_with_solubility(X, solubility_bins, max_clusters=15, min_silhouette_improvement=0.01):
+    """
+    使用溶解度分类作为初始标签的标签传播聚类方法
+
+    参数:
+    X: 降维后的数据矩阵
+    solubility_bins: 基于溶解度的类别标签
+    max_clusters: 最大簇数量
+    min_silhouette_improvement: 最小轮廓系数改进阈值
+
+    返回:
+    best_labels: 最佳聚类标签
+    best_silhouette: 最佳轮廓系数
+    history: 迭代历史
+    """
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    history = []
+
+    # 使用溶解度类别作为初始标签
+    n_clusters = len(np.unique(solubility_bins))
+    initial_labels = solubility_bins.copy()
+
+    # 掩盖部分标签以允许传播
+    masked_labels = initial_labels.copy()
+    n_unlabeled = int(0.3 * len(X_scaled))  # 30% 被掩盖
+    mask_indices = np.random.choice(len(X_scaled), size=n_unlabeled, replace=False)
+    masked_labels[mask_indices] = -1
+
+    # 运行标签传播
+    label_spreading = LabelSpreading(kernel='rbf', alpha=0.8)
+    label_spreading.fit(X_scaled, masked_labels)
+    labels = label_spreading.transduction_
+
+    # 计算轮廓系数
+    try:
+        silhouette = silhouette_score(X_scaled, labels)
+        history.append({'n_clusters': n_clusters, 'silhouette': silhouette})
+        print(f"基于溶解度的标签传播 (k={n_clusters}): 轮廓系数 = {silhouette:.4f}")
+    except Exception as e:
+        print(f"计算轮廓系数时出错: {str(e)}")
+        silhouette = -1
+
+    return labels, silhouette, history
+
