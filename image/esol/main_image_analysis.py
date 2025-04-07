@@ -215,6 +215,8 @@ def run_pca_analysis(features, original_cluster_labels, solubility_values, solub
             'metrics': all_metrics
         })
 
+
+
         # If 2D, create visualizations
         if n_components == 2:
             # Continuous value coloring
@@ -416,6 +418,31 @@ def run_autoencoder_analysis(features, original_cluster_labels, solubility_value
                 )
 
     return results
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+def run_kmeans_clustering(X, k_range=(2, 10)):
+    """
+    自动搜索最佳聚类簇数，并返回轮廓系数和标签
+    """
+    best_score = -1
+    best_k = None
+    best_labels = None
+
+    for k in range(k_range[0], k_range[1] + 1):
+        try:
+            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+            labels = kmeans.fit_predict(X)
+            score = silhouette_score(X, labels)
+            if score > best_score:
+                best_score = score
+                best_k = k
+                best_labels = labels
+        except Exception as e:
+            print(f"KMeans 失败: k={k}, 错误: {e}")
+
+    return best_k, best_score, best_labels
+
 
 
 def evaluate_with_true_labels(features, solubility_bins, output_path):

@@ -124,7 +124,7 @@ class FeatureExtractor:
         return self.feature_dim
 
 
-def extract_features_from_images(image_files, solubility_values=None, model_name='resnet18', batch_size=32):
+def extract_features_from_images(image_files, model_name='resnet18', batch_size=32):
     """
     从图像文件中提取特征的便捷函数
 
@@ -141,15 +141,12 @@ def extract_features_from_images(image_files, solubility_values=None, model_name
     from image_data_loader import create_data_loader, MoleculeImageDataset
 
     # 创建数据加载器
-    data_loader = create_data_loader(image_files, solubility_values, batch_size=batch_size)
+    data_loader = create_data_loader(image_files,  batch_size=batch_size)
 
     # 创建特征提取器
     extractor = FeatureExtractor(model_name=model_name)
 
     # 提取特征
-    if solubility_values is not None:
-        features, labels = extractor.extract_features(data_loader, normalize=True)
-        return features, labels
-    else:
-        features = extractor.extract_features(data_loader, normalize=True)
-        return features
+    #
+    features = extractor.extract_features(data_loader, normalize=True)
+    return features

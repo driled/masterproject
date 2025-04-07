@@ -1,34 +1,38 @@
 """
-Main module for ESOL dataset dimensionality reduction and clustering analysis with ILS
-and divergence metrics
+Main module for ESOL image-based dimensionality reduction and clustering analysis with ILS
 """
-
+import visualization_modified as visualization
 import os
 import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
+from torch._functorch._aot_autograd.logging_utils import model_name
 
-from pub_func.table.data_loader import load_data, preprocess_data
-from pub_func.table.ils_clustering import ILS_clustering_with_optimization, ILS_clustering_with_solubility
+from image_data_loader import load_image_data
+from image.esol.cnn_feature_extractor import extract_features_from_images
+from pub_func.table.ils_clustering import ILS_clustering, ILS_clustering_with_optimization, ILS_clustering_with_solubility
 from pub_func.table.dim_reduction import perform_pca, perform_umap, perform_autoencoder
 from pub_func.table.clustering import evaluate_embedding
-from pub_func.table.visualization import (save_embedding_csv, plot_2d_embedding,
+from visualization_modified import (save_embedding_csv, plot_2d_embedding,
                            plot_clustering_result, plot_silhouette_history,
                            plot_comparison_bar, save_results_summary)
+
 from pub_func.table.divergence_metrics import (calculate_pca_divergence, calculate_umap_divergence,
                                 calculate_manifold_divergence)
 
 
-def run_dimensionality_reduction(input_path, output_path):
+def run_image_dimensionality_reduction(image_dir, output_path, model_name='resnet18'):
     """
-    Main function for running dimensionality reduction, clustering, and evaluation
+    Main function for running image-based dimensionality reduction, clustering, and evaluation
     with Iterative Label Spreading (ILS) clustering for ESOL dataset
 
     Parameters:
-    input_path: Input data path
+    image_dir: Directory containing molecule images
+    metadata_path: Path to metadata CSV file with solubility values
     output_path: Output results path
+    model_name: CNN model to use for feature extraction
 
     Returns:
     results_df: DataFrame with dimensionality reduction results
@@ -37,49 +41,29 @@ def run_dimensionality_reduction(input_path, output_path):
     # Ensure output directory exists
     os.makedirs(output_path, exist_ok=True)
 
-    # Load data
-    X, solubility_values, solubility_bins = load_data(input_path)
+    # Load image data
+    image_files, molecule_ids = load_image_data(image_dir)
 
-    # Preprocess data
-    X_scaled, _ = preprocess_data(X)
+    # Extract CNN features
+    print(f"\nExtracting CNN features using {model_name}...")
+    start_time = time.time()
+    features = extract_features_from_images(image_files, model_name=model_name)
+    feature_extraction_time = time.time() - start_time
+    print(f"Feature extraction completed in {feature_extraction_time:.2f} seconds")
 
-    # Initialize results containers
-    all_results = []
-    all_clustering_results = []
+    # Save extracted features
+    feature_df = pd.DataFrame(features)
+    if molecule_ids:
+        feature_df['molecule_id'] = molecule_ids
+    feature_df.to_csv(os.path.join(output_path, f"{model_name}_features.csv"), index=False)
+    print(f"Extracted features saved to {os.path.join(output_path, f'{model_name}_features.csv')}")
 
-    # Run PCA analysis
-    pca_results, pca_clustering_results = run_pca_analysis(X_scaled, solubility_values, solubility_bins, output_path)
-    all_results.extend(pca_results)
-    all_clustering_results.extend(pca_clustering_results)
 
-    # Run UMAP analysis
-    umap_results, umap_clustering_results = run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
-    all_results.extend(umap_results)
-    all_clustering_results.extend(umap_clustering_results)
+    # Add CNN model information to results
+    results_df['CNN Model'] = model_name
+    results_df['Feature Extraction Time (s)'] = feature_extraction_time
 
-    # Run Autoencoder analysis
-    ae_results, ae_clustering_results = run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins,
-                                                                 output_path)
-    all_results.extend(ae_results)
-    all_clustering_results.extend(ae_clustering_results)
 
-    # Prepare comprehensive results summary
-    results_df = prepare_results_summary(all_results)
-
-    # Prepare clustering results summary
-    clustering_df = pd.DataFrame({
-        'Method': [r['method'] for r in all_clustering_results],
-        'Parameters': [r['params'] for r in all_clustering_results],
-        'Optimal Clusters': [r['n_clusters'] for r in all_clustering_results],
-        'Silhouette Score': [r['silhouette_score'] for r in all_clustering_results],
-    })
-
-    # Save results summaries
-    save_results_summary(results_df, output_path, 'dimensionality_reduction_results.csv')
-    save_results_summary(clustering_df, output_path, 'clustering_results.csv')
-
-    # Evaluate with true labels (solubility categories)
-    true_labels_df = evaluate_with_true_labels(X_scaled, solubility_bins, output_path)
 
     # Create comprehensive comparison visualizations
     create_comprehensive_visualizations(results_df, clustering_df, output_path)
@@ -91,31 +75,58 @@ def run_dimensionality_reduction(input_path, output_path):
     return results_df, clustering_df
 
 
-def run_pca_analysis(X_scaled, cluster_labels,output_path):
-    results = []
-    clustering_results = []
+def run_pca_analysis(features, original_cluster_labels,  output_path):
+    """
+    Run PCA dimensionality reduction for visualization
+    Uses clustering results from original high-dimensional features
 
-    print("\nRunning PCA dimensionality reduction (without solubility)...")
+    Parameters:
+    features: CNN feature data
+    original_cluster_labels: Cluster labels from high-dimensional clustering
+    solubility_values: Continuous solubility values
+    solubility_bins: Discretized solubility categories
+    output_path: Output directory path
+
+    Returns:
+    results: List of results dictionaries
+    """
+    results = []
+
+    print("\nRunning PCA dimensionality reduction on CNN features...")
     for n_components in [2, 5, 10, 20]:
-        print(f"n_components = {n_components}")
+        print(f"  n_components = {n_components}")
         start_time = time.time()
 
-        # Perform PCA (无监督降维)
-        X_pca, pca_model, pca_metrics = perform_pca(X_scaled, n_components)
+        # Perform PCA
+        X_pca, pca_model, pca_metrics = perform_pca(features, n_components)
         runtime = time.time() - start_time
 
-        # Evaluate embedding quality (无监督指标，仅评估内在结构)
-        eval_metrics = evaluate_embedding(X_scaled, X_pca)
+        # Calculate divergence metrics
+        print("  Calculating divergence metrics...")
+        try:
+            pca_divergence = calculate_pca_divergence(features, X_pca, pca_model)
+            manifold_divergence = calculate_manifold_divergence(features, X_pca)
 
-        # 聚类（无监督）
-        cluster_labels, silhouette, history = ILS_clustering_with_optimization(X_pca)
+            # Add divergence metrics to pca_metrics
+            pca_metrics['pca_divergence'] = pca_divergence
+            pca_metrics['manifold_divergence'] = manifold_divergence
 
-        # 添加聚类的轮廓系数
-        eval_metrics['silhouette_score'] = silhouette
+            print(f"  PCA Divergence: {pca_divergence:.4f}")
+            print(
+                f"  Manifold Divergence: {manifold_divergence:.4f}" if manifold_divergence is not None else "  Manifold Divergence: N/A")
+        except Exception as e:
+            print(f"  Error calculating divergence metrics: {str(e)}")
 
-        # 合并全部指标
+        # Save reduction results
+        save_embedding_csv(X_pca, output_path, f"pca_{n_components}d.csv")
+
+        # Evaluate reduction quality
+        eval_metrics = evaluate_embedding(features, X_pca)
+
+        # Merge all metrics
         all_metrics = {**eval_metrics, **pca_metrics}
 
+        # Record results
         results.append({
             'method': 'PCA',
             'params': f'n_components={n_components}',
@@ -123,40 +134,50 @@ def run_pca_analysis(X_scaled, cluster_labels,output_path):
             'metrics': all_metrics
         })
 
-        # 记录聚类结果
-        clustering_results.append({
-            'method': 'PCA',
-            'params': f'n_components={n_components}',
-            'n_clusters': len(np.unique(cluster_labels)),
-            'silhouette_score': silhouette,
-            'cluster_history': history
-        })
-
-        # 保存降维结果CSV
-        save_embedding_csv(X_pca, output_path, f"pca_{n_components}d.csv")
-
-    return results, clustering_results
 
 
+        # If 2D, create visualizations
+        if n_components == 2:
+            # Continuous value coloring
+            plot_2d_embedding(
+                X_pca, output_path, 'pca_2d_plot.png',
+                'PCA 2D Projection of CNN Features', 'viridis', 'Solubility Value'
+            )
 
-def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path):
+            # Discrete category coloring
+
+            plot_2d_embedding(
+                    X_pca, output_path, 'pca_2d_plot_discrete.png',
+                    'PCA 2D Projection of CNN Features (Colored by Solubility Category)', 'tab10', 'Solubility Category'
+                )
+
+            # Visualization with high-dimensional clustering results
+            plot_clustering_result(
+                X_pca, original_cluster_labels, output_path, f'pca_{n_components}d_high_dim_clusters.png',
+                f'PCA 2D Projection - Clusters from High-Dimensional CNN Features ({len(np.unique(original_cluster_labels))} clusters)'
+            )
+
+    return results
+
+
+def run_umap_analysis(features, original_cluster_labels, solubility_values, solubility_bins, output_path):
     """
-    Run UMAP dimensionality reduction, clustering, and evaluation
+    Run UMAP dimensionality reduction for visualization
+    Uses clustering results from original high-dimensional features
 
     Parameters:
-    X_scaled: Standardized feature data
+    features: CNN feature data
+    original_cluster_labels: Cluster labels from high-dimensional clustering
     solubility_values: Continuous solubility values
     solubility_bins: Discretized solubility categories
     output_path: Output directory path
 
     Returns:
     results: List of results dictionaries
-    clustering_results: List of clustering results dictionaries
     """
     results = []
-    clustering_results = []
 
-    print("\nRunning UMAP dimensionality reduction...")
+    print("\nRunning UMAP dimensionality reduction on CNN features...")
     for n_neighbors in [5, 15, 30]:
         for min_dist in [0.1, 0.5]:
             for n_components in [2, 5]:
@@ -164,14 +185,14 @@ def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
                 start_time = time.time()
 
                 # Perform UMAP
-                X_umap, umap_model, umap_metrics = perform_umap(X_scaled, n_components, n_neighbors, min_dist)
+                X_umap, umap_model, umap_metrics = perform_umap(features, n_components, n_neighbors, min_dist)
                 runtime = time.time() - start_time
 
                 # Calculate divergence metrics
                 print("  Calculating divergence metrics...")
                 try:
-                    umap_divergence = calculate_umap_divergence(X_scaled, X_umap, n_neighbors)
-                    manifold_divergence = calculate_manifold_divergence(X_scaled, X_umap)
+                    umap_divergence = calculate_umap_divergence(features, X_umap, n_neighbors)
+                    manifold_divergence = calculate_manifold_divergence(features, X_umap)
 
                     # Add divergence metrics to umap_metrics
                     umap_metrics['umap_divergence'] = umap_divergence
@@ -187,7 +208,7 @@ def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
                 save_embedding_csv(X_umap, output_path, f"umap_nn{n_neighbors}_md{min_dist}_{n_components}d.csv")
 
                 # Evaluate reduction quality
-                eval_metrics = evaluate_embedding(X_scaled, X_umap, solubility_values, solubility_bins)
+                eval_metrics = evaluate_embedding(features, X_umap, solubility_values, solubility_bins)
 
                 # Merge all metrics
                 all_metrics = {**eval_metrics, **umap_metrics}
@@ -205,7 +226,8 @@ def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
                     # Continuous value coloring
                     plot_2d_embedding(
                         X_umap, solubility_values, output_path, f'umap_nn{n_neighbors}_md{min_dist}_2d_plot.png',
-                        f'UMAP 2D Projection (n_neighbors={n_neighbors}, min_dist={min_dist})', 'viridis',
+                        f'UMAP 2D Projection of CNN Features (n_neighbors={n_neighbors}, min_dist={min_dist})',
+                        'viridis',
                         'Solubility Value'
                     )
 
@@ -214,66 +236,38 @@ def run_umap_analysis(X_scaled, solubility_values, solubility_bins, output_path)
                         plot_2d_embedding(
                             X_umap, solubility_bins, output_path,
                             f'umap_nn{n_neighbors}_md{min_dist}_2d_plot_discrete.png',
-                            f'UMAP 2D Projection (n_neighbors={n_neighbors}, min_dist={min_dist}, Colored by Solubility Category)',
+                            f'UMAP 2D Projection of CNN Features (n_neighbors={n_neighbors}, min_dist={min_dist}, Colored by Solubility Category)',
                             'tab10', 'Solubility Category'
                         )
 
-                # Apply ILS clustering
-                print(
-                    f"\nApplying ILS clustering to UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}, n_components={n_components}) results...")
-                if solubility_bins is not None:
-                    print(f"\nApplying solubility-based ILS clustering...")
-                    cluster_labels, silhouette, history = ILS_clustering_with_solubility(X_umap, solubility_bins)
-                else:
-                    # Use iterative optimization
-                    cluster_labels, silhouette, history = ILS_clustering_with_optimization(X_umap)
-
-                # Record clustering results
-                clustering_results.append({
-                    'method': 'UMAP',
-                    'params': f'n_neighbors={n_neighbors}, min_dist={min_dist}, n_components={n_components}',
-                    'n_clusters': len(np.unique(cluster_labels)),
-                    'silhouette_score': silhouette,
-                    'cluster_history': history
-                })
-
-                # If 2D, create clustering visualizations
-                if n_components == 2:
-                    # Clustering result visualization
+                    # Visualization with high-dimensional clustering results
                     plot_clustering_result(
-                        X_umap, cluster_labels, output_path,
-                        f'umap_nn{n_neighbors}_md{min_dist}_{n_components}d_clusters.png',
-                        f'UMAP 2D Projection (n_neighbors={n_neighbors}, min_dist={min_dist}) - ILS Clustering ({len(np.unique(cluster_labels))} clusters)'
+                        X_umap, original_cluster_labels, output_path,
+                        f'umap_nn{n_neighbors}_md{min_dist}_{n_components}d_high_dim_clusters.png',
+                        f'UMAP 2D Projection - Clusters from High-Dimensional CNN Features ({len(np.unique(original_cluster_labels))} clusters)'
                     )
 
-                    # Silhouette history visualization
-                    plot_silhouette_history(
-                        history, silhouette, output_path,
-                        f'umap_nn{n_neighbors}_md{min_dist}_{n_components}d_silhouette_history.png',
-                        f'UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}) {n_components}D - Silhouette Coefficient vs Number of Clusters'
-                    )
-
-    return results, clustering_results
+    return results
 
 
-def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, output_path):
+def run_autoencoder_analysis(features, original_cluster_labels, solubility_values, solubility_bins, output_path):
     """
-    Run autoencoder dimensionality reduction, clustering, and evaluation
+    Run autoencoder dimensionality reduction for visualization
+    Uses clustering results from original high-dimensional features
 
     Parameters:
-    X_scaled: Standardized feature data
+    features: CNN feature data
+    original_cluster_labels: Cluster labels from high-dimensional clustering
     solubility_values: Continuous solubility values
     solubility_bins: Discretized solubility categories
     output_path: Output directory path
 
     Returns:
     results: List of results dictionaries
-    clustering_results: List of clustering results dictionaries
     """
     results = []
-    clustering_results = []
 
-    print("\nRunning autoencoder dimensionality reduction...")
+    print("\nRunning autoencoder dimensionality reduction on CNN features...")
 
     # Try different encoding dimensions and intermediate layer sizes
     for encoding_dim in [2, 5, 10, 20]:
@@ -282,16 +276,15 @@ def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, outpu
             start_time = time.time()
 
             # Perform autoencoder dimensionality reduction
-            X_ae, encoder, ae_metrics = perform_autoencoder(X_scaled, encoding_dim, intermediate_dim)
+            X_ae, encoder, ae_metrics = perform_autoencoder(features, encoding_dim, intermediate_dim)
             runtime = time.time() - start_time
 
             # Calculate divergence metrics
             print("  Calculating divergence metrics...")
             try:
                 # The decoder is needed for autoencoder divergence
-                # We need to extract it from the perform_autoencoder result
                 # For simplicity, we'll use manifold divergence which doesn't need the decoder
-                manifold_divergence = calculate_manifold_divergence(X_scaled, X_ae)
+                manifold_divergence = calculate_manifold_divergence(features, X_ae)
 
                 # Add divergence metrics to ae_metrics
                 ae_metrics['manifold_divergence'] = manifold_divergence
@@ -305,7 +298,7 @@ def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, outpu
             save_embedding_csv(X_ae, output_path, f"ae_ed{encoding_dim}_id{intermediate_dim}.csv")
 
             # Evaluate reduction quality
-            eval_metrics = evaluate_embedding(X_scaled, X_ae, solubility_values, solubility_bins)
+            eval_metrics = evaluate_embedding(features, X_ae, solubility_values, solubility_bins)
 
             # Merge all metrics
             all_metrics = {**eval_metrics, **ae_metrics}
@@ -323,7 +316,7 @@ def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, outpu
                 # Continuous value coloring
                 plot_2d_embedding(
                     X_ae, solubility_values, output_path, f'ae_ed{encoding_dim}_id{intermediate_dim}_2d_plot.png',
-                    f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})',
+                    f'AE 2D Projection of CNN Features (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})',
                     'viridis', 'Solubility Value'
                 )
 
@@ -332,53 +325,51 @@ def run_autoencoder_analysis(X_scaled, solubility_values, solubility_bins, outpu
                     plot_2d_embedding(
                         X_ae, solubility_bins, output_path,
                         f'ae_ed{encoding_dim}_id{intermediate_dim}_2d_plot_discrete.png',
-                        f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}, Colored by Solubility Category)',
+                        f'AE 2D Projection of CNN Features (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}, Colored by Solubility Category)',
                         'tab10', 'Solubility Category'
                     )
 
-            # Apply ILS clustering
-            print(
-                f"\nApplying ILS clustering to autoencoder results (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim})...")
-            if solubility_bins is not None:
-                print(f"\nApplying solubility-based ILS clustering...")
-                cluster_labels, silhouette, history = ILS_clustering_with_solubility(X_ae, solubility_bins)
-            else:
-                # Use iterative optimization
-                cluster_labels, silhouette, history = ILS_clustering_with_optimization(X_ae)
-
-            # Record clustering results
-            clustering_results.append({
-                'method': 'Autoencoder',
-                'params': f'encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}',
-                'n_clusters': len(np.unique(cluster_labels)),
-                'silhouette_score': silhouette,
-                'cluster_history': history
-            })
-
-            # If 2D, create clustering visualizations
-            if encoding_dim == 2:
-                # Clustering result visualization
+                # Visualization with high-dimensional clustering results
                 plot_clustering_result(
-                    X_ae, cluster_labels, output_path, f'ae_ed{encoding_dim}_id{intermediate_dim}_clusters.png',
-                    f'AE 2D Projection (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - ILS Clustering ({len(np.unique(cluster_labels))} clusters)'
+                    X_ae, original_cluster_labels, output_path,
+                    f'ae_ed{encoding_dim}_id{intermediate_dim}_high_dim_clusters.png',
+                    f'AE 2D Projection - Clusters from High-Dimensional CNN Features ({len(np.unique(original_cluster_labels))} clusters)'
                 )
 
-                # Silhouette history visualization
-                plot_silhouette_history(
-                    history, silhouette, output_path,
-                    f'ae_ed{encoding_dim}_id{intermediate_dim}_silhouette_history.png',
-                    f'AE (encoding_dim={encoding_dim}, intermediate_dim={intermediate_dim}) - Silhouette Coefficient vs Number of Clusters'
-                )
+    return results
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
-    return results, clustering_results
+def run_kmeans_clustering(X, k_range=(2, 10)):
+    """
+    自动搜索最佳聚类簇数，并返回轮廓系数和标签
+    """
+    best_score = -1
+    best_k = None
+    best_labels = None
+
+    for k in range(k_range[0], k_range[1] + 1):
+        try:
+            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+            labels = kmeans.fit_predict(X)
+            score = silhouette_score(X, labels)
+            if score > best_score:
+                best_score = score
+                best_k = k
+                best_labels = labels
+        except Exception as e:
+            print(f"KMeans 失败: k={k}, 错误: {e}")
+
+    return best_k, best_score, best_labels
 
 
-def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
+
+def evaluate_with_true_labels(features, solubility_bins, output_path):
     """
     Calculate silhouette scores using true solubility categories
 
     Parameters:
-    X_scaled: Standardized feature data
+    features: CNN feature data
     solubility_bins: Discretized solubility categories
     output_path: Output directory path
 
@@ -390,9 +381,21 @@ def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
 
     silhouette_with_true_labels = []
 
+    # Calculate silhouette score in original feature space
+    try:
+        orig_s_score = silhouette_score(features, solubility_bins)
+        silhouette_with_true_labels.append({
+            'Method': 'Original CNN Features',
+            'Parameters': f'dim={features.shape[1]}',
+            'Silhouette Score (True Labels)': orig_s_score
+        })
+        print(f"Silhouette score using true labels in original feature space: {orig_s_score:.4f}")
+    except:
+        print("Could not calculate silhouette score in original feature space")
+
     # PCA dimensionality reduction
     for n_components in [2, 5, 10, 20]:
-        X_reduced = perform_pca(X_scaled, n_components)[0]
+        X_reduced = perform_pca(features, n_components)[0]
         try:
             s_score = silhouette_score(X_reduced, solubility_bins)
             silhouette_with_true_labels.append({
@@ -407,7 +410,7 @@ def evaluate_with_true_labels(X_scaled, solubility_bins, output_path):
     for n_neighbors in [5, 15, 30]:
         for min_dist in [0.1, 0.5]:
             for n_components in [2, 5]:
-                X_reduced = perform_umap(X_scaled, n_components, n_neighbors, min_dist)[0]
+                X_reduced = perform_umap(features, n_components, n_neighbors, min_dist)[0]
                 try:
                     s_score = silhouette_score(X_reduced, solubility_bins)
                     silhouette_with_true_labels.append({
@@ -550,19 +553,21 @@ def create_comprehensive_visualizations(results_df, clustering_df, output_path):
 
     # Clustering silhouette score comparison
     plot_comparison_bar(
-        clustering_df, 'Dimensionality Reduction Method', 'Silhouette Score',
-        'ILS Clustering Silhouette Score Comparison', output_path,
+        clustering_df, 'Method', 'Silhouette Score',
+        'Clustering Silhouette Score Comparison', output_path,
         'clustering_silhouette_comparison.png'
     )
 
 
 if __name__ == "__main__":
     # Set input and output paths
-    input_path = r"D:\materproject\all-reps\ESOL\ESOL-table"
-    output_path = r"D:\materproject\single-rep-rd\table\ESOL-ILS"
+    image_dir = r"D:\materproject\all-reps\ESOL\ESOL-image"
+    metadata_path = r"D:\materproject\all-reps\ESOL\ESOL-table\esol.csv"  # Path to CSV with solubility data
+    output_path = r"D:\materproject\single-rep-rd\image\ESOL"
 
-    # Run main function
-    results_df, clustering_df = run_dimensionality_reduction(input_path, output_path)
+    # Run main function with ResNet18 for feature extraction
+    results_df, clustering_df = run_image_dimensionality_reduction(image_dir, metadata_path, output_path,
+                                                                   model_name='resnet18')
 
     # Print results summary
     print("\nDimensionality reduction results summary:")

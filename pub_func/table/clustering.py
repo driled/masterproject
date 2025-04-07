@@ -82,7 +82,7 @@ def calculate_continuity(X_original, X_embedded, n_neighbors=5):
     return continuity
 
 
-def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubility_bins=None, method_name=None,
+def evaluate_embedding(X_original, X_embedded,   method_name=None,
                        method_params=None):
     """
     Evaluate quality of dimensionality reduction results with additional divergence metrics
@@ -101,13 +101,7 @@ def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubilit
     metrics = {}
 
     # 1. Silhouette coefficient (using discretized solubility category labels)
-    if solubility_bins is not None and len(np.unique(solubility_bins)) > 1:
-        try:
-            metrics['silhouette_score'] = silhouette_score(X_embedded, solubility_bins)
-            print(f"Silhouette coefficient using discretized solubility categories: {metrics['silhouette_score']:.4f}")
-        except Exception as e:
-            print(f"Error calculating silhouette coefficient: {str(e)}")
-            metrics['silhouette_score'] = None
+
 
     # 2. Neighbor preservation rate
     k = min(20, len(X_original) - 1)  # Number of neighbors, not exceeding number of samples minus 1

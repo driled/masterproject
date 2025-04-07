@@ -23,7 +23,10 @@ if __name__ == "__main__":
     setup_paths()
 
     # 导入主模块
+
+
     from main_image_analysis import run_image_dimensionality_reduction
+    import main_image_analysis_modified as main_image_analysis
 
     # 设置输入和输出路径
     image_dir = r"D:\materproject\all-reps\ESOL\ESOL-image"

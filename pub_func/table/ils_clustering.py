@@ -281,3 +281,51 @@ def ILS_clustering_with_solubility(X, solubility_bins):
     history = [{'n_clusters': n_clusters, 'silhouette': silhouette}]
 
     return labels, silhouette, history
+
+
+
+
+
+def ILS_clustering_with_kmeans_labels(X, n_clusters=4, mask_fraction=0.3, random_state=42):
+    """
+    使用KMeans标签作为初始标签进行ILS聚类
+
+    参数:
+    - X: numpy array或DataFrame，特征数据
+    - n_clusters: KMeans聚类的簇数量
+    - mask_fraction: 掩盖标签的比例（默认30%）
+    - random_state: 随机种子
+
+    返回:
+    - labels: 最终聚类标签
+    - silhouette: 轮廓系数
+    - history: 迭代历史（这里为单次运行）
+    """
+    # 转换数据格式为DataFrame
+    if isinstance(X, np.ndarray):
+        df = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(X.shape[1])])
+    else:
+        df = X.copy()
+
+    # 使用KMeans初始化标签
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
+    initial_labels = kmeans.fit_predict(df)
+
+    # 创建标签列，并添加掩盖机制
+    df['label'] = initial_labels + 1  # +1确保0用于未标记
+    np.random.seed(random_state)
+    mask_indices = np.random.choice(df.index, size=int(mask_fraction * len(df)), replace=False)
+    df.loc[mask_indices, 'label'] = 0  # 掩盖部分标签为0
+
+    # 应用ILS聚类
+    new_labels, ordered_info = ILS(df, 'label')
+
+    # 调整标签从0开始
+    final_labels = new_labels.values - 1
+
+    # 计算轮廓系数
+    silhouette = silhouette_score(X, final_labels)
+
+    history = [{'n_clusters': n_clusters, 'silhouette': silhouette}]
+
+    return final_labels, silhouette, history
