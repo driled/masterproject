@@ -46,7 +46,7 @@ def run_image_dimensionality_reduction(image_dir, metadata_path, output_path, mo
     # Extract CNN features
     print(f"\nExtracting CNN features using {model_name}...")
     start_time = time.time()
-    features, _ = extract_features_from_images(image_files, solubility_values, model_name=model_name)
+    features = extract_features_from_images(image_files, solubility_values, model_name=model_name)
     feature_extraction_time = time.time() - start_time
     print(f"Feature extraction completed in {feature_extraction_time:.2f} seconds")
 

@@ -4,16 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="49907623-c28e-410d-8cd8-406efba9c4c4" name="Changes" comment="esol-table-dr">
-      <change afterPath="$PROJECT_DIR$/image/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/esol/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/esol/cnn_feature_extractor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/esol/image_data_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/esol/main_image_analysis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/esol/run_image_analysis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image/qm7b/__init__.py" afterDir="false" />
+    <list default="true" id="49907623-c28e-410d-8cd8-406efba9c4c4" name="Changes" comment="esol-image-dr">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pub_func/table/ils_clustering.py" beforeDir="false" afterPath="$PROJECT_DIR$/pub_func/table/ils_clustering.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/image/esol/main_image_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/image/esol/main_image_analysis.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -278,7 +271,7 @@
       <workItem from="1743644393533" duration="727000" />
       <workItem from="1743677125491" duration="1622000" />
       <workItem from="1743956357613" duration="9537000" />
-      <workItem from="1744000329209" duration="3850000" />
+      <workItem from="1744000329209" duration="5520000" />
     </task>
     <task id="LOCAL-00001" summary="esol-table-rd">
       <option name="closed" value="true" />
@@ -352,7 +345,15 @@
       <option name="project" value="LOCAL" />
       <updated>1744000136341</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="esol-image-dr">
+      <option name="closed" value="true" />
+      <created>1744004230264</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1744004230264</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -374,7 +375,8 @@
     <MESSAGE value="11" />
     <MESSAGE value="qm7-table-dr" />
     <MESSAGE value="esol-table-dr" />
-    <option name="LAST_COMMIT_MESSAGE" value="esol-table-dr" />
+    <MESSAGE value="esol-image-dr" />
+    <option name="LAST_COMMIT_MESSAGE" value="esol-image-dr" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/origin$run.coverage" NAME="run Coverage Results" MODIFIED="1743644902463" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
@@ -382,7 +384,7 @@
     <SUITE FILE_PATH="coverage/origin$run__2_.coverage" NAME="run (2) Coverage Results" MODIFIED="1743601720138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GO_qdots-table-reduction" />
     <SUITE FILE_PATH="coverage/code$ESOL_tabular_rd.coverage" NAME="ESOL-tabular-rd Coverage Results" MODIFIED="1743346396705" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/origin$run__1_.coverage" NAME="run (1) Coverage Results" MODIFIED="1743962826553" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/QM7b-table-reduction" />
-    <SUITE FILE_PATH="coverage/origin$run_image_analysis.coverage" NAME="run_image_analysis Coverage Results" MODIFIED="1744004186019" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/image/esol" />
+    <SUITE FILE_PATH="coverage/origin$run_image_analysis.coverage" NAME="run_image_analysis Coverage Results" MODIFIED="1744005012821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/image/esol" />
     <SUITE FILE_PATH="coverage/origin$run_ils__2_.coverage" NAME="run_ils (2) Coverage Results" MODIFIED="1743960548417" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GO_qdots-table-reduction" />
     <SUITE FILE_PATH="coverage/origin$run_ils__1_.coverage" NAME="run_ils (1) Coverage Results" MODIFIED="1743959582056" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/ESOL-table-reduction" />
     <SUITE FILE_PATH="coverage/code$main.coverage" NAME="main Coverage Results" MODIFIED="1743345717803" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
