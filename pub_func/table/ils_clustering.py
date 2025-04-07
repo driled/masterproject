@@ -175,14 +175,14 @@ def ILS_clustering(X, n_clusters=4, feature_names=None):
     return labels, silhouette, history
 
 
-def ILS_clustering_with_optimization(X, initial_clusters=4, max_clusters=15, min_silhouette_improvement=0.01):
+def ILS_clustering_with_optimization(X, initial_clusters=2, max_clusters=15, min_silhouette_improvement=0.01):
     """
     Apply ILS clustering with iterative optimization for number of clusters
 
     Parameters:
     X: numpy array or pandas DataFrame with feature data
-    initial_clusters: starting number of clusters
-    max_clusters: maximum number of clusters to try
+    initial_clusters: starting number of clusters (default: 2)
+    max_clusters: maximum number of clusters to try (default: 15)
     min_silhouette_improvement: minimum improvement in silhouette score to continue
 
     Returns:
@@ -201,7 +201,7 @@ def ILS_clustering_with_optimization(X, initial_clusters=4, max_clusters=15, min
     current_silhouette = -1
     n_clusters = initial_clusters
 
-    print(f"Starting ILS clustering analysis...")
+    print(f"Starting ILS clustering analysis with automatic cluster number optimization...")
 
     while n_clusters <= max_clusters:
         try:
@@ -216,7 +216,7 @@ def ILS_clustering_with_optimization(X, initial_clusters=4, max_clusters=15, min
                 best_labels = labels.copy()
                 current_silhouette = silhouette
             else:
-                print(f"Stopping iteration: no significant improvement.")
+                print(f"Stopping optimization: no significant improvement with k={n_clusters}.")
                 break
 
             n_clusters += 1
@@ -230,7 +230,7 @@ def ILS_clustering_with_optimization(X, initial_clusters=4, max_clusters=15, min
         best_labels, best_silhouette, _ = ILS_clustering(X, n_clusters=initial_clusters)
         history = [{'n_clusters': initial_clusters, 'silhouette': best_silhouette}]
 
-    print(f"Best number of clusters: {len(np.unique(best_labels))}, Silhouette: {best_silhouette:.4f}")
+    print(f"Best number of clusters determined: {len(np.unique(best_labels))}, Silhouette: {best_silhouette:.4f}")
     return best_labels, best_silhouette, history
 
 
