@@ -1,5 +1,5 @@
 """
-ESOL数据集降维和迭代标签溢出聚类分析
+ESOL数据集降维和迭代标签扩散(ILS)聚类分析 - 简化版本（无VAE和t-SNE）
 """
 
 import os
@@ -22,12 +22,12 @@ if __name__ == "__main__":
     # 设置路径
     setup_paths()
 
-    # 导入主模块
-    from main import run_dimensionality_reduction
+    # 导入主模块 (使用修改后的ILS聚类方法)
+    from main_ils import run_dimensionality_reduction
 
     # 设置输入和输出路径
-    input_path = r"D:\materproject\all-reps\ESOL\ESOL-table"
-    output_path = r"D:\materproject\single-rep-rd\table\ESOL"
+    input_path = r"D:\materproject\all-reps\GO_qdots\GO_qdots-table"
+    output_path = r"D:\materproject\single-rep-rd\table\GO_qdots"  # 更改输出路径以区分ILS结果
 
     # 允许通过命令行参数修改路径
     if len(sys.argv) > 1:
@@ -41,4 +41,4 @@ if __name__ == "__main__":
     # 运行分析
     results_df, clustering_df = run_dimensionality_reduction(input_path, output_path)
 
-    print("\n分析完成！")
+    print("\n分析完成！使用ILS聚类方法的结果已保存。")

@@ -18,7 +18,7 @@ def perform_pca(X, n_components):
     pca: PCA模型对象
     metrics: 模型特有的指标
     """
-    from divergence_metrics import calculate_pca_divergence
+    from pub_func.table.divergence_metrics import calculate_pca_divergence
 
     pca = PCA(n_components=n_components)
     X_pca = pca.fit_transform(X)
@@ -59,7 +59,7 @@ def perform_tsne(X, n_components, perplexity):
     tsne: t-SNE模型对象
     metrics: 模型特有的指标
     """
-    from divergence_metrics import calculate_tsne_divergence
+    from pub_func.table.divergence_metrics import calculate_tsne_divergence
 
     tsne = TSNE(n_components=n_components, perplexity=perplexity,
                 n_iter=1000, random_state=42)
@@ -94,7 +94,7 @@ def perform_umap(X, n_components, n_neighbors, min_dist):
     umap_reducer: UMAP模型对象
     metrics: 模型特有的指标
     """
-    from divergence_metrics import calculate_umap_divergence
+    from pub_func.table.divergence_metrics import calculate_umap_divergence
 
     umap_reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist,
                              n_components=n_components, random_state=42)
@@ -130,7 +130,7 @@ def perform_vae(X, latent_dim, intermediate_dim=256, epochs=20, batch_size=32):
     encoder: Encoder model
     metrics: Model-specific metrics including KL divergence
     """
-    from divergence_metrics import calculate_vae_kl_divergence, numpy_calculate_vae_kl_divergence
+    from pub_func.table.divergence_metrics import calculate_vae_kl_divergence, numpy_calculate_vae_kl_divergence
 
     # Create VAE model
     vae, encoder, decoder = create_vae(X.shape[1], latent_dim, intermediate_dim)
@@ -337,7 +337,7 @@ def perform_autoencoder(X, latent_dim, intermediate_dim=256, epochs=50, batch_si
     encoder: Encoder model
     metrics: Model-specific metrics including divergence
     """
-    from divergence_metrics import calculate_autoencoder_divergence
+    from pub_func.table.divergence_metrics import calculate_autoencoder_divergence
 
     # Create autoencoder model
     autoencoder, encoder, decoder = create_autoencoder(X.shape[1], latent_dim, intermediate_dim)

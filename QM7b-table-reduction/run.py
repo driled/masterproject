@@ -23,7 +23,7 @@ if __name__ == "__main__":
     setup_paths()
 
     # Import main module
-    from main import run_dimensionality_reduction
+    from pub_func.table.main_ils import run_dimensionality_reduction
 
     # Set input and output paths
     input_path = r"D:\materproject\all-reps\QM7b\QM7b-table"

@@ -144,7 +144,7 @@ def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubilit
     print(f"Continuity (k={n_neighbors_trust}): {metrics['continuity']:.4f}")
 
     # 5. Add Manifold Divergence for all methods
-    from divergence_metrics import calculate_manifold_divergence
+    from pub_func.table.divergence_metrics import calculate_manifold_divergence
 
     manifold_div = calculate_manifold_divergence(X_original, X_embedded)
     if manifold_div is not None:

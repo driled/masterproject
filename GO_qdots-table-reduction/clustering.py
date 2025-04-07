@@ -3,30 +3,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 from sklearn.manifold import trustworthiness
-from sklearn.impute import SimpleImputer
-
-
-def handle_nan_values(X):
-    """
-    Check for and handle NaN values in the data
-
-    Parameters:
-    X: Input data matrix
-
-    Returns:
-    X_clean: Data matrix with NaN values handled
-    has_nan: Boolean indicating if the original data had NaN values
-    """
-    has_nan = np.isnan(X).any()
-
-    if has_nan:
-        print("Warning: NaN values detected in the data. Applying imputation...")
-        imputer = SimpleImputer(strategy='mean')
-        X_clean = imputer.fit_transform(X)
-        print(f"Imputation completed. Shape preserved: {X.shape} -> {X_clean.shape}")
-        return X_clean, True
-
-    return X, False
+from sklearn.preprocessing import StandardScaler
+from sklearn.semi_supervised import LabelSpreading
 
 
 def calculate_trustworthiness(X_original, X_embedded, n_neighbors=5):
@@ -41,10 +19,6 @@ def calculate_trustworthiness(X_original, X_embedded, n_neighbors=5):
     Returns:
     trust: Trustworthiness score (0-1, higher is better)
     """
-    # Handle NaN values if present
-    X_original, _ = handle_nan_values(X_original)
-    X_embedded, _ = handle_nan_values(X_embedded)
-
     # Use scikit-learn's implementation
     trust = trustworthiness(X_original, X_embedded, n_neighbors=n_neighbors)
     return trust
@@ -62,17 +36,13 @@ def calculate_continuity(X_original, X_embedded, n_neighbors=5):
     Returns:
     continuity: Continuity score (0-1, higher is better)
     """
-    # Handle NaN values if present
-    X_original, _ = handle_nan_values(X_original)
-    X_embedded, _ = handle_nan_values(X_embedded)
-
     # Calculate k-nearest neighbors in original space
     nbrs_orig = NearestNeighbors(n_neighbors=n_neighbors + 1).fit(X_original)
-    distances_orig, indices_orig = nbrs_orig.kneighbors(X_original)
+    _, indices_orig = nbrs_orig.kneighbors(X_original)
 
     # Calculate k-nearest neighbors in embedded space
     nbrs_embed = NearestNeighbors(n_neighbors=n_neighbors + 1).fit(X_embedded)
-    distances_embedded, indices_embed = nbrs_embed.kneighbors(X_embedded)
+    _, indices_embed = nbrs_embed.kneighbors(X_embedded)
 
     # Calculate continuity
     n_samples = X_original.shape[0]
@@ -112,40 +82,34 @@ def calculate_continuity(X_original, X_embedded, n_neighbors=5):
     return continuity
 
 
-def evaluate_embedding(X_original, X_embedded, energy_values=None, energy_bins=None):
+def evaluate_embedding(X_original, X_embedded, solubility_values=None, solubility_bins=None, method_name=None,
+                       method_params=None):
     """
-    Evaluate quality of dimensionality reduction results with multiple neighborhood sizes
+    Evaluate quality of dimensionality reduction results with additional divergence metrics
 
     Parameters:
     X_original: Data in original feature space
     X_embedded: Data after dimensionality reduction
-    energy_values: Continuous energy values (for visualization)
-    energy_bins: Discretized energy categories (for evaluating clustering quality)
+    solubility_values: Continuous solubility values (for visualization)
+    solubility_bins: Discretized solubility categories (for evaluating clustering quality)
+    method_name: Name of the dimensionality reduction method (for specific divergence calculation)
+    method_params: Parameters of the dimensionality reduction method
 
     Returns:
     metrics: Dictionary containing various evaluation metrics
     """
-    # Handle NaN values if present
-    X_original, _ = handle_nan_values(X_original)
-    X_embedded, had_nan = handle_nan_values(X_embedded)
-
     metrics = {}
 
-    # If we had to impute values, record this in metrics
-    if had_nan:
-        metrics['had_nan_values'] = True
-        print("Warning: NaN values were detected and imputed in the embedded data")
-
-    # 1. Silhouette coefficient (using discretized energy category labels)
-    if energy_bins is not None and len(np.unique(energy_bins)) > 1:
+    # 1. Silhouette coefficient (using discretized solubility category labels)
+    if solubility_bins is not None and len(np.unique(solubility_bins)) > 1:
         try:
-            metrics['silhouette_score'] = silhouette_score(X_embedded, energy_bins)
-            print(f"Silhouette coefficient using discretized energy categories: {metrics['silhouette_score']:.4f}")
+            metrics['silhouette_score'] = silhouette_score(X_embedded, solubility_bins)
+            print(f"Silhouette coefficient using discretized solubility categories: {metrics['silhouette_score']:.4f}")
         except Exception as e:
             print(f"Error calculating silhouette coefficient: {str(e)}")
             metrics['silhouette_score'] = None
 
-    # 2. Neighbor preservation rate (with original k=20 parameter)
+    # 2. Neighbor preservation rate
     k = min(20, len(X_original) - 1)  # Number of neighbors, not exceeding number of samples minus 1
 
     # Calculate k nearest neighbors in original space
@@ -170,53 +134,31 @@ def evaluate_embedding(X_original, X_embedded, energy_values=None, energy_bins=N
     metrics['neighbor_preservation'] = preserved_neighbors / total_neighbors
     print(f"Neighbor preservation rate: {metrics['neighbor_preservation']:.4f}")
 
-    # 3. Trustworthiness and Continuity with multiple neighborhood sizes
-    # Define a range of neighborhood sizes to test
-    neighbor_sizes = [5, 10, 20, min(50, len(X_original) // 4)]
+    # 3. Trustworthiness
+    n_neighbors_trust = min(5, len(X_original) - 1)
+    metrics['trustworthiness'] = calculate_trustworthiness(X_original, X_embedded, n_neighbors=n_neighbors_trust)
+    print(f"Trustworthiness (k={n_neighbors_trust}): {metrics['trustworthiness']:.4f}")
 
-    print("\nEvaluating metrics across different neighborhood sizes:")
-    for n_size in neighbor_sizes:
-        # Skip if neighborhood size is too large
-        if n_size >= len(X_original):
-            print(f"  Skipping k={n_size} (exceeds data size)")
-            continue
+    # 4. Continuity
+    metrics['continuity'] = calculate_continuity(X_original, X_embedded, n_neighbors=n_neighbors_trust)
+    print(f"Continuity (k={n_neighbors_trust}): {metrics['continuity']:.4f}")
 
-        # Calculate metrics for this neighborhood size
-        key_suffix = f"_k{n_size}"
+    # 5. Add Manifold Divergence for all methods
+    from divergence_metrics import calculate_manifold_divergence
 
-        # Calculate trustworthiness
-        trust_value = calculate_trustworthiness(X_original, X_embedded, n_neighbors=n_size)
-        metrics[f'trustworthiness{key_suffix}'] = trust_value
-
-        # Calculate continuity
-        cont_value = calculate_continuity(X_original, X_embedded, n_neighbors=n_size)
-        metrics[f'continuity{key_suffix}'] = cont_value
-
-        print(f"  Neighborhood size k={n_size}:")
-        print(f"    Trustworthiness: {trust_value:.4f}")
-        print(f"    Continuity: {cont_value:.4f}")
-
-    # Keep the default k=5 metrics for backward compatibility
-    default_k = min(5, len(X_original) - 1)
-    metrics['trustworthiness'] = metrics.get(f'trustworthiness_k{default_k}',
-                                             calculate_trustworthiness(X_original, X_embedded, n_neighbors=default_k))
-    metrics['continuity'] = metrics.get(f'continuity_k{default_k}',
-                                        calculate_continuity(X_original, X_embedded, n_neighbors=default_k))
+    manifold_div = calculate_manifold_divergence(X_original, X_embedded)
+    if manifold_div is not None:
+        metrics['manifold_divergence'] = manifold_div
+        print(f"Manifold Divergence: {metrics['manifold_divergence']:.6f}")
 
     return metrics
 
 
-import numpy as np
-from sklearn.metrics import silhouette_score
-from sklearn.semi_supervised import LabelSpreading
-from sklearn.preprocessing import StandardScaler
 
-
-import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
-from sklearn.semi_supervised import LabelSpreading
+from sklearn.neighbors import NearestNeighbors
+
 
 def label_spreading_clustering(X, n_clusters_init=2, max_clusters=15, min_silhouette_improvement=0.01):
     """
@@ -306,48 +248,49 @@ def label_spreading_clustering(X, n_clusters_init=2, max_clusters=15, min_silhou
     return best_labels, best_silhouette, history
 
 
-
-# 更新结果汇总函数，将多个邻域大小的结果包含在内
-def prepare_results_summary(all_results):
+def label_spreading_clustering_with_solubility(X, solubility_bins, max_clusters=15, min_silhouette_improvement=0.01):
     """
-    Prepare comprehensive results summary including metrics with different neighborhood sizes
+    使用溶解度分类作为初始标签的标签传播聚类方法
 
-    Parameters:
-    all_results: List of results dictionaries from all dimensionality reduction methods
+    参数:
+    X: 降维后的数据矩阵
+    solubility_bins: 基于溶解度的类别标签
+    max_clusters: 最大簇数量
+    min_silhouette_improvement: 最小轮廓系数改进阈值
 
-    Returns:
-    results_df: DataFrame with comprehensive results summary
+    返回:
+    best_labels: 最佳聚类标签
+    best_silhouette: 最佳轮廓系数
+    history: 迭代历史
     """
-    # 基本结果数据
-    base_metrics = {
-        'Method': [r['method'] for r in all_results],
-        'Parameters': [r['params'] for r in all_results],
-        'Runtime (s)': [r['runtime'] for r in all_results],
-        'Neighbor Preservation': [r['metrics'].get('neighbor_preservation', None) for r in all_results],
-        'Silhouette Score': [r['metrics'].get('silhouette_score', None) for r in all_results],
-        # 默认参数的trustworthiness和continuity，保持向后兼容
-        'Trustworthiness': [r['metrics'].get('trustworthiness', None) for r in all_results],
-        'Continuity': [r['metrics'].get('continuity', None) for r in all_results],
-        'Variance Explained': [r['metrics'].get('variance_explained', None) for r in all_results],
-        'Reconstruction Error': [r['metrics'].get('reconstruction_error', None) for r in all_results],
-        'KL Divergence': [r['metrics'].get('kl_divergence', None) for r in all_results],
-    }
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-    # 创建基本DataFrame
-    results_df = pd.DataFrame(base_metrics)
+    history = []
 
-    # 添加不同邻域大小的指标
-    neighborhood_sizes = [5, 10, 20, 50]
-    for k in neighborhood_sizes:
-        # 检查是否有任何结果包含此邻域大小的指标
-        trust_key = f'trustworthiness_k{k}'
-        cont_key = f'continuity_k{k}'
+    # 使用溶解度类别作为初始标签
+    n_clusters = len(np.unique(solubility_bins))
+    initial_labels = solubility_bins.copy()
 
-        has_metrics = any(trust_key in r['metrics'] or cont_key in r['metrics'] for r in all_results)
+    # 掩盖部分标签以允许传播
+    masked_labels = initial_labels.copy()
+    n_unlabeled = int(0.3 * len(X_scaled))  # 30% 被掩盖
+    mask_indices = np.random.choice(len(X_scaled), size=n_unlabeled, replace=False)
+    masked_labels[mask_indices] = -1
 
-        if has_metrics:
-            # 添加此邻域大小的列
-            results_df[f'Trustworthiness (k={k})'] = [r['metrics'].get(trust_key, None) for r in all_results]
-            results_df[f'Continuity (k={k})'] = [r['metrics'].get(cont_key, None) for r in all_results]
+    # 运行标签传播
+    label_spreading = LabelSpreading(kernel='rbf', alpha=0.8)
+    label_spreading.fit(X_scaled, masked_labels)
+    labels = label_spreading.transduction_
 
-    return results_df
+    # 计算轮廓系数
+    try:
+        silhouette = silhouette_score(X_scaled, labels)
+        history.append({'n_clusters': n_clusters, 'silhouette': silhouette})
+        print(f"基于溶解度的标签传播 (k={n_clusters}): 轮廓系数 = {silhouette:.4f}")
+    except Exception as e:
+        print(f"计算轮廓系数时出错: {str(e)}")
+        silhouette = -1
+
+    return labels, silhouette, history
+
