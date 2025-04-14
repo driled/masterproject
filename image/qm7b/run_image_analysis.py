@@ -17,13 +17,17 @@ if __name__ == "__main__":
     # 只导入修改后的模块
     import main_image_analysis_modified as main_image_analysis
 
-    image_dir = r"D:\materproject\all-reps\QM7b\QM7b-image"
-    metadata_path = ""  # QM7b无溶解度，空字符串即可
-    output_path = r"D:\materproject\single-rep-rd\image\QM7b"
+    # image_dir = r"D:\materproject\all-reps\QM7b\QM7b-image"
+    # metadata_path = ""  # QM7b无溶解度，空字符串即可
+    # output_path = r"D:\materproject\single-rep-rd\image\QM7b"
 
     # image_dir = r"D:\materproject\all-reps\ESOL\ESOL-image"
     # metadata_path = ""  # QM7b无溶解度，空字符串即可
     # output_path = r"D:\materproject\single-rep-rd\image\ESOL"
+
+    image_dir = r"D:\materproject\all-reps\GO_qdots\GO_qdots-image"
+    # metadata_path = ""  # QM7b无溶解度，空字符串即可
+    output_path = r"D:\materproject\single-rep-rd\image\GO_qdots"
 
     if len(sys.argv) > 1:
         image_dir = sys.argv[1]
@@ -37,7 +41,7 @@ if __name__ == "__main__":
         model_name = sys.argv[4]
 
     print(f"图像目录: {image_dir}")
-    print(f"元数据路径: {metadata_path}")
+
     print(f"输出路径: {output_path}")
     print(f"CNN模型: {model_name}")
 
